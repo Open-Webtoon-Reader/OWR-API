@@ -4,6 +4,7 @@
 ### Database ###
 *.accdb
 *.db
+*.db-journal
 *.dbf
 *.mdb
 *.pdb

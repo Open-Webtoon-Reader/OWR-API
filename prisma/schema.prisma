@@ -1,0 +1,53 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./database.db"
+}
+
+model Webtoon {
+  id                          Int       @id @default(autoincrement())
+  title                       String
+  author                      String
+  language                    String
+  episodes_thumbnails_zip_sum String?
+  thumbnail_sum               String
+  background_banner_sum       String
+  top_banner_sum              String
+  mobile_banner_sum           String
+  episodes                    Episode[]
+
+  @@map("webtoons")
+}
+
+model Episode {
+  id             Int            @id @default(autoincrement())
+  title          String
+  webtoon_id     Int
+  webtoon        Webtoon        @relation(fields: [webtoon_id], references: [id])
+  number         Int
+  images_zip_sum String
+  thumbnail_sum  String
+  episode_images EpisodeImage[]
+
+  @@unique([webtoon_id, number])
+  @@map("episodes")
+}
+
+model EpisodeImage {
+  episode_id Int
+  episode    Episode @relation(fields: [episode_id], references: [id])
+  number     Int
+  sum        String
+
+  @@id([episode_id, number])
+  @@map("episode_images")
+}
