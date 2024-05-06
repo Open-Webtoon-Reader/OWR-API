@@ -2,7 +2,7 @@
 
 import * as fs from "fs";
 import {JSDOM} from "jsdom";
-import {Injectable} from "@nestjs/common";
+import {Injectable, Logger} from "@nestjs/common";
 import CachedWebtoonModel from "./models/models/cached-webtoon.model";
 import WebtoonGenres from "./models/enums/webtoon-genres";
 import WebtoonLanguages from "./models/enums/webtoon-languages";
@@ -14,6 +14,7 @@ import WebtoonBannerModel from "./models/models/webtoon-banner.model";
 @Injectable()
 export class WebtoonParserService{
 
+    private readonly logger: Logger = new Logger(WebtoonParserService.name);
     webtoons: Record<string, CachedWebtoonModel[]> = {};
 
     constructor(
@@ -23,20 +24,20 @@ export class WebtoonParserService{
     async loadCache(): Promise<void>{
         // Load existing cache
         if(fs.existsSync("./.cache/webtoons.json")){
-            console.log("Loading webtoon list from cache...");
+            this.logger.log("Loading webtoon list from cache...");
             this.webtoons = JSON.parse(fs.readFileSync("./.cache/webtoons.json").toString());
             const webtoonCount = Object.values(this.webtoons).reduce((acc, val: any) => acc + val.length, 0);
-            console.log(`Loaded ${webtoonCount}!`);
+            this.logger.log(`Loaded ${webtoonCount}!`);
             return;
         }
-        console.log("Loading webtoon list...");
+        this.logger.log("Loading webtoon list...");
         // Generate and save cache
         for (const language of Object.values(WebtoonLanguages)){
-            console.log(`Loading webtoons for language: ${language}`);
+            this.logger.log(`Loading webtoons for language: ${language}`);
             this.webtoons[language] = await this.getWebtoonsFromLanguage(language);
         }
         const webtoonCount = Object.values(this.webtoons).reduce((acc, val: any) => acc + val.length, 0);
-        console.log(`Loaded ${webtoonCount} webtoons!`);
+        this.logger.log(`Loaded ${webtoonCount} webtoons!`);
         // Save cache
         fs.mkdirSync("./.cache", {recursive: true});
         fs.writeFileSync("./.cache/webtoons.json", JSON.stringify(this.webtoons, null, 2));
@@ -187,11 +188,11 @@ export class WebtoonParserService{
 
     findWebtoon(webtoons: CachedWebtoonModel[], name: string): CachedWebtoonModel{
         // Try to find one with exact name
-        const exactWebtoon = webtoons.find(webtoon => webtoon.title === name);
+        const exactWebtoon: CachedWebtoonModel = webtoons.find(webtoon => webtoon.title === name);
         if(exactWebtoon)
             return exactWebtoon;
         // Try to find all with lower case
-        const lowerCaseWebtoons = webtoons.filter(webtoon => webtoon.title.toLowerCase() === name);
+        const lowerCaseWebtoons: CachedWebtoonModel[] = webtoons.filter(webtoon => webtoon.title.toLowerCase() === name);
         if(lowerCaseWebtoons.length === 1)
             return lowerCaseWebtoons[0];
         // Try with normalized string

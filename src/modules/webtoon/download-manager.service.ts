@@ -6,6 +6,8 @@ import CachedWebtoonModel from "./models/models/cached-webtoon.model";
 import EpisodeModel from "./models/models/episode.model";
 import EpisodeDataModel from "./models/models/episode-data.model";
 import {Injectable} from "@nestjs/common";
+import WebtoonModel from "./models/models/webtoon.model";
+import WebtoonDataModel from "./models/models/webtoon-data.model";
 
 @Injectable()
 export class DownloadManagerService{
@@ -60,8 +62,8 @@ export class DownloadManagerService{
             if(!webtoonOverview)
                 return;
             if(!await this.webtoonDatabase.isWebtoonSaved(webtoonOverview.title)){
-                const webtoon = await this.webtoonParser.getWebtoonInfos(webtoonOverview);
-                const webtoonData = await this.webtoonDownloader.downloadWebtoon(webtoon);
+                const webtoon: WebtoonModel = await this.webtoonParser.getWebtoonInfos(webtoonOverview);
+                const webtoonData: WebtoonDataModel = await this.webtoonDownloader.downloadWebtoon(webtoon);
                 await this.webtoonDatabase.saveWebtoon(webtoon, webtoonData);
             }
             const startEpisode: number = await this.webtoonDatabase.getLastSavedEpisodeNumber(webtoonOverview.title);
