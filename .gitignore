@@ -246,3 +246,5 @@ fabric.properties
 .flaskenv*
 !.env.project
 !.env.vault
+
+images/

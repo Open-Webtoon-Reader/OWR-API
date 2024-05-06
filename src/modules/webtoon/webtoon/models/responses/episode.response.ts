@@ -1,6 +1,10 @@
+import {ApiProperty} from "@nestjs/swagger";
+
 export default class EpisodeResponse{
-    title: string;
-    images: string[];
+    @ApiProperty()
+        title: string;
+    @ApiProperty()
+        images: string[];
 
     constructor(
         title: string,

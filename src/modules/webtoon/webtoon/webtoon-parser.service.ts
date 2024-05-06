@@ -2,14 +2,14 @@
 
 import * as fs from "fs";
 import {JSDOM} from "jsdom";
-import {Injectable, Logger} from "@nestjs/common";
+import {ConflictException, Injectable, Logger, NotFoundException} from "@nestjs/common";
 import CachedWebtoonModel from "./models/models/cached-webtoon.model";
 import WebtoonGenres from "./models/enums/webtoon-genres";
 import WebtoonLanguages from "./models/enums/webtoon-languages";
-import {MiscService} from "../misc/misc.service";
 import EpisodeModel from "./models/models/episode.model";
 import WebtoonModel from "./models/models/webtoon.model";
 import WebtoonBannerModel from "./models/models/webtoon-banner.model";
+import {MiscService} from "../../misc/misc.service";
 
 @Injectable()
 export class WebtoonParserService{
@@ -27,7 +27,7 @@ export class WebtoonParserService{
             this.logger.log("Loading webtoon list from cache...");
             this.webtoons = JSON.parse(fs.readFileSync("./.cache/webtoons.json").toString());
             const webtoonCount = Object.values(this.webtoons).reduce((acc, val: any) => acc + val.length, 0);
-            this.logger.log(`Loaded ${webtoonCount}!`);
+            this.logger.log(`Loaded ${webtoonCount} webtoons!`);
             return;
         }
         this.logger.log("Loading webtoon list...");
@@ -43,7 +43,7 @@ export class WebtoonParserService{
         fs.writeFileSync("./.cache/webtoons.json", JSON.stringify(this.webtoons, null, 2));
     }
 
-    async getWebtoonsFromLanguage(language: string): Promise<CachedWebtoonModel[]>{
+    private async getWebtoonsFromLanguage(language: string): Promise<CachedWebtoonModel[]>{
         const languageWebtoons: CachedWebtoonModel[] = [];
         const promises: Promise<CachedWebtoonModel[]>[] = [];
         for (const genre of Object.values(WebtoonGenres))
@@ -54,12 +54,12 @@ export class WebtoonParserService{
         return this.removeDuplicateWebtoons(languageWebtoons);
     }
 
-    async getWebtoonsFromGenre(language: string, genre: string): Promise<CachedWebtoonModel[]>{
+    private async getWebtoonsFromGenre(language: string, genre: string): Promise<CachedWebtoonModel[]>{
         const url = `https://www.webtoons.com/${language}/genres/${genre}`;
         const response = await this.miscService.getAxiosInstance().get(url);
         const document = new JSDOM(response.data).window.document;
         const cards = document.querySelector("ul.card_lst")?.querySelectorAll("li");
-        if(!cards) throw new Error(`No cards found for genre: ${genre}`);
+        if(!cards) throw new NotFoundException(`No cards found for genre: ${genre}`);
         const webtoons = [];
         for(const li of cards){
             const a = li.querySelector("a");
@@ -71,7 +71,7 @@ export class WebtoonParserService{
             const id = link.split("?title_no=")[1];
             const thumbnail = a.querySelector("img")?.src;
             if(!title || !author || !stars || !link || !thumbnail || !id)
-                throw new Error(`Missing data for webtoon: ${url}`);
+                throw new NotFoundException(`Missing data for webtoon: ${url}`);
             const webtoon: CachedWebtoonModel = {
                 title,
                 author,
@@ -87,7 +87,7 @@ export class WebtoonParserService{
         return webtoons;
     }
 
-    removeDuplicateWebtoons(webtoons: CachedWebtoonModel[]){
+    private removeDuplicateWebtoons(webtoons: CachedWebtoonModel[]){
         const webtoonsWithoutDuplicates: CachedWebtoonModel[] = [];
         for(const webtoon of webtoons){
             const existingWebtoon = webtoonsWithoutDuplicates.find(w => w.title === webtoon.title);
@@ -113,7 +113,7 @@ export class WebtoonParserService{
         const document = new JSDOM(response.data).window.document;
         const mobileDocument = new JSDOM(mobileResponse.data).window.document;
         const rawEpCount = document.querySelector("ul#_listUl li a span.tx")?.textContent?.replace("#", "");
-        if(!rawEpCount) throw new Error(`No episode number found for webtoon: ${url}`);
+        if(!rawEpCount) throw new NotFoundException(`No episode number found for webtoon: ${url}`);
         const epCount = parseInt(rawEpCount);
         return {
             ...webtoon,
@@ -122,7 +122,7 @@ export class WebtoonParserService{
         } as WebtoonModel;
     }
 
-    async parseWebtoonBanner(webtoonDom: Document, mobileWebtoonDom: Document): Promise<WebtoonBannerModel>{
+    private async parseWebtoonBanner(webtoonDom: Document, mobileWebtoonDom: Document): Promise<WebtoonBannerModel>{
         const style = webtoonDom.querySelector("div.detail_bg")?.getAttribute("style");
         const backgroundBanner = style?.split("url(")[1].split(")")[0];
         const topBanner = webtoonDom.querySelector("span.thmb")?.querySelector("img")?.src;
@@ -133,9 +133,9 @@ export class WebtoonParserService{
         } as WebtoonBannerModel;
     }
 
-    async parseMobileWebtoonBanner(mobileWebtoonDom: Document): Promise<string>{
+    private async parseMobileWebtoonBanner(mobileWebtoonDom: Document): Promise<string>{
         const bannerUrl = (mobileWebtoonDom.querySelector("#header")?.getAttribute("style")?.split("url(")[1]?.split(")")[0]) || null;
-        if (!bannerUrl) throw new Error("No banner found on mobile page");
+        if (!bannerUrl) throw new NotFoundException("No banner found on mobile page");
         return bannerUrl;
     }
 
@@ -146,7 +146,7 @@ export class WebtoonParserService{
         const document = new JSDOM(response.data).window.document;
         const epUl = document.querySelector("div.episode_cont ul");
         const epList = epUl?.querySelectorAll("li");
-        if(!epList) throw new Error(`No episodes found for webtoon: ${url}`);
+        if(!epList) throw new NotFoundException(`No episodes found for webtoon: ${url}`);
         const episodes: EpisodeModel[] = [];
         for(const li of epList){
             const a = li.querySelector("a");
@@ -155,7 +155,7 @@ export class WebtoonParserService{
             const thumbnail = a.querySelector("span.thmb img")?.getAttribute("data-url");
             const title = a.querySelector("span.subj")?.textContent;
             if(!title || !link || !thumbnail)
-                throw new Error(`Missing data for episode: ${url}`);
+                throw new NotFoundException(`Missing data for episode: ${url}`);
             episodes.push({
                 link,
                 thumbnail,
@@ -175,36 +175,36 @@ export class WebtoonParserService{
         const document = dom.window.document;
         const imagesNode = document.querySelector("div#_imageList");
         const images = imagesNode?.querySelectorAll("img");
-        if(!images) throw new Error(`No images found for episode: ${url}`);
+        if(!images) throw new NotFoundException(`No images found for episode: ${url}`);
         const links: string[] = [];
         for (let i = 0; i < images.length; i++){
             const image = images[i];
             const link = image.getAttribute("data-url");
-            if(!link) throw new Error(`No link found for image ${i + 1} in episode: ${url}`);
+            if(!link) throw new NotFoundException(`No link found for image ${i + 1} in episode: ${url}`);
             links.push(link);
         }
         return links;
     }
 
-    findWebtoon(webtoons: CachedWebtoonModel[], name: string): CachedWebtoonModel{
+    findWebtoon(name: string, language: string): CachedWebtoonModel{
         // Try to find one with exact name
-        const exactWebtoon: CachedWebtoonModel = webtoons.find(webtoon => webtoon.title === name);
+        const exactWebtoon: CachedWebtoonModel = this.webtoons[language].find(webtoon => webtoon.title === name);
         if(exactWebtoon)
             return exactWebtoon;
         // Try to find all with lower case
-        const lowerCaseWebtoons: CachedWebtoonModel[] = webtoons.filter(webtoon => webtoon.title.toLowerCase() === name);
+        const lowerCaseWebtoons: CachedWebtoonModel[] = this.webtoons[language].filter(webtoon => webtoon.title.toLowerCase() === name);
         if(lowerCaseWebtoons.length === 1)
             return lowerCaseWebtoons[0];
         // Try with normalized string
         name = this.miscService.normalizeString(name);
-        const matchingWebtoons = webtoons.filter(webtoon => {
+        const matchingWebtoons: CachedWebtoonModel[] = this.webtoons[language].filter(webtoon => {
             const normalizedTitle = this.miscService.normalizeString(webtoon.title);
             return normalizedTitle.includes(name);
         });
         if (matchingWebtoons.length === 0)
-            throw new Error("Webtoon not found");
+            throw new NotFoundException("Webtoon not found");
         else if (matchingWebtoons.length > 1)
-            throw new Error("Many webtoons found, please be more specific");
+            throw new ConflictException("Many webtoons found, please be more specific");
         else
             return matchingWebtoons[0];
     }
