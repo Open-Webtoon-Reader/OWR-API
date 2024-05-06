@@ -1,12 +1,17 @@
 import {Module} from "@nestjs/common";
-import {AppController} from "./app.controller";
-import {AppService} from "./app.service";
 import {TaskModule} from "./modules/task/task.module";
-import {WebtoonModule} from "./modules/webtoon/webtoon.module";
+import {ConfigModule} from "@nestjs/config";
+import {WebtoonModule} from "./modules/webtoon/webtoon/webtoon.module";
+import {AdminModule} from "./modules/webtoon/admin/admin.module";
 
 @Module({
-    imports: [TaskModule, WebtoonModule],
-    controllers: [AppController],
-    providers: [AppService],
+    imports: [
+        ConfigModule.forRoot({isGlobal: true}),
+        TaskModule,
+        WebtoonModule,
+        AdminModule,
+    ],
+    controllers: [],
+    providers: [],
 })
 export class AppModule{}

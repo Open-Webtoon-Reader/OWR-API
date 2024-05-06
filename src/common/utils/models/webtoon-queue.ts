@@ -1,4 +1,4 @@
-import CachedWebtoonModel from "../../../modules/webtoon/models/models/cached-webtoon.model";
+import CachedWebtoonModel from "../../../modules/webtoon/webtoon/models/models/cached-webtoon.model";
 
 export default class WebtoonQueue{
 

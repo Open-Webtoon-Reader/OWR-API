@@ -1,9 +1,9 @@
 import {Injectable} from "@nestjs/common";
 import {createHash} from "crypto";
-import JSZip from "jszip";
-import fs from "fs";
-import sharp from "sharp";
-import WebtoonStarModel from "../webtoon/models/models/webtoon-star.model";
+import * as JSZip from "jszip";
+import * as fs from "fs";
+import * as sharp from "sharp";
+import WebtoonStarModel from "../webtoon/webtoon/models/models/webtoon-star.model";
 import axios, {AxiosInstance} from "axios";
 
 

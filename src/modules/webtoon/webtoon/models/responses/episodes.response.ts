@@ -1,12 +1,19 @@
 import EpisodeLineModel from "../models/episode-line.model";
+import {ApiProperty} from "@nestjs/swagger";
 
 export default class EpisodesResponse{
-    episodes: EpisodeLineModel[];
-    backgroundBanner: string;
-    topBanner: string;
-    mobileBanner: string;
-    title: string;
-    author: string;
+    @ApiProperty()
+        episodes: EpisodeLineModel[];
+    @ApiProperty()
+        backgroundBanner: string;
+    @ApiProperty()
+        topBanner: string;
+    @ApiProperty()
+        mobileBanner: string;
+    @ApiProperty()
+        title: string;
+    @ApiProperty()
+        author: string;
 
     constructor(
         episodes: EpisodeLineModel[],

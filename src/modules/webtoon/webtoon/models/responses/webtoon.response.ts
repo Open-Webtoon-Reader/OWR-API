@@ -1,9 +1,16 @@
+import {ApiProperty} from "@nestjs/swagger";
+
 export default class WebtoonResponse{
-    id: number;
-    title: string;
-    language: string;
-    thumbnail: string; // As dataurl
-    author: string;
+    @ApiProperty()
+        id: number;
+    @ApiProperty()
+        title: string;
+    @ApiProperty()
+        language: string;
+    @ApiProperty()
+        author: string;
+    @ApiProperty()
+        thumbnail: string; // As dataurl
 
     constructor(
         id: number,

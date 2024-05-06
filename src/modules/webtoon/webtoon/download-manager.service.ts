@@ -1,13 +1,14 @@
-import WebtoonQueue from "../../common/utils/models/webtoon-queue";
 import {WebtoonDatabaseService} from "./webtoon-database.service";
 import {WebtoonDownloaderService} from "./webtoon-downloader.service";
 import {WebtoonParserService} from "./webtoon-parser.service";
 import CachedWebtoonModel from "./models/models/cached-webtoon.model";
 import EpisodeModel from "./models/models/episode.model";
 import EpisodeDataModel from "./models/models/episode-data.model";
-import {Injectable} from "@nestjs/common";
+import {HttpException, Injectable} from "@nestjs/common";
 import WebtoonModel from "./models/models/webtoon.model";
 import WebtoonDataModel from "./models/models/webtoon-data.model";
+import WebtoonQueue from "../../../common/utils/models/webtoon-queue";
+import {HttpStatusCode} from "axios";
 
 @Injectable()
 export class DownloadManagerService{
@@ -33,7 +34,7 @@ export class DownloadManagerService{
     async addWebtoonToQueue(webtoonName: string, language = "en"): Promise<void>{
         if(!this.cacheLoaded)
             throw new Error("Cache not loaded.");
-        const webtoonOverview: CachedWebtoonModel = this.webtoonParser.findWebtoon(this.webtoonParser.webtoons[language], webtoonName);
+        const webtoonOverview: CachedWebtoonModel = this.webtoonParser.findWebtoon(webtoonName, language);
         // If webtoon already in queue, do nothing
         if(this.queue.getElements().find(w => w.title === webtoonOverview.title))
             return;
@@ -46,27 +47,29 @@ export class DownloadManagerService{
 
     async updateAllWebtoons(): Promise<void>{
         if(!this.cacheLoaded)
-            throw new Error("Cache not loaded.");
+            throw new HttpException("Cache not loaded.", HttpStatusCode.TooEarly);
+        const empty: boolean = this.queue.isEmpty();
         for(const webtoonLanguageName of await this.webtoonDatabase.getWebtoonList()){
             const webtoonLanguage: CachedWebtoonModel[] = this.webtoonParser.webtoons[webtoonLanguageName.language];
-            const empty: boolean = this.queue.isEmpty();
             this.queue.enqueue(webtoonLanguage.find(w => w.title === webtoonLanguageName.title) as CachedWebtoonModel);
-            if(empty)
-                this.startDownload().then(() => console.log("Download finished."));
         }
+        if(empty)
+            this.startDownload().then(() => console.log("Download finished."));
     }
 
     private async startDownload(): Promise<void>{
+        if(!this.cacheLoaded)
+            throw new HttpException("Cache not loaded.", HttpStatusCode.TooEarly);
         while(!this.queue.isEmpty()){
             const webtoonOverview: CachedWebtoonModel | undefined = this.queue.dequeue();
             if(!webtoonOverview)
                 return;
-            if(!await this.webtoonDatabase.isWebtoonSaved(webtoonOverview.title)){
+            if(!await this.webtoonDatabase.isWebtoonSaved(webtoonOverview.title, webtoonOverview.language)){
                 const webtoon: WebtoonModel = await this.webtoonParser.getWebtoonInfos(webtoonOverview);
                 const webtoonData: WebtoonDataModel = await this.webtoonDownloader.downloadWebtoon(webtoon);
                 await this.webtoonDatabase.saveWebtoon(webtoon, webtoonData);
             }
-            const startEpisode: number = await this.webtoonDatabase.getLastSavedEpisodeNumber(webtoonOverview.title);
+            const startEpisode: number = await this.webtoonDatabase.getLastSavedEpisodeNumber(webtoonOverview.title, webtoonOverview.language);
             const epList: EpisodeModel[] = await this.webtoonParser.getEpisodes(webtoonOverview);
             for(let i = startEpisode; i < epList.length; i++){
                 const epImageLinks: string[] = await this.webtoonParser.getEpisodeLinks(webtoonOverview, epList[i]);

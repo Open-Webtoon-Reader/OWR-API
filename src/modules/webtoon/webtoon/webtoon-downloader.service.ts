@@ -1,9 +1,9 @@
 import EpisodeModel from "./models/models/episode.model";
 import EpisodeDataModel from "./models/models/episode-data.model";
 import WebtoonDataModel from "./models/models/webtoon-data.model";
-import {MiscService} from "../misc/misc.service";
 import WebtoonModel from "./models/models/webtoon.model";
 import {Injectable} from "@nestjs/common";
+import {MiscService} from "../../misc/misc.service";
 
 @Injectable()
 export class WebtoonDownloaderService{
