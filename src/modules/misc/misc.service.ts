@@ -33,6 +33,10 @@ export class MiscService{
         return createHash("sha256").update(data).digest("hex");
     }
 
+    /**
+     * @deprecated
+     * @param zip
+     */
     async generateZip(zip: JSZip): Promise<[Buffer, string]>{
         const zipBuffer = await zip.generateAsync({
             type: "nodebuffer",
