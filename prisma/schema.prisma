@@ -13,40 +13,87 @@ datasource db {
   url      = "file:./database.db"
 }
 
-model Webtoon {
-  id                          Int       @id @default(autoincrement())
-  title                       String
-  author                      String
-  language                    String
-  episodes_thumbnails_zip_sum String?
-  thumbnail_sum               String
-  background_banner_sum       String
-  top_banner_sum              String
-  mobile_banner_sum           String
-  episodes                    Episode[]
+model ImageTypes {
+  id    Int      @id @default(autoincrement())
+  name  String
+  image Images[]
 
+  @@map("image_types")
+}
+
+model Images {
+  id                Int             @id @default(autoincrement())
+  sum               String          @unique
+  type_id           Int
+  type              ImageTypes      @relation(fields: [type_id], references: [id])
+  thumbnail         Webtoons?       @relation("thumbnail")
+  background_banner Webtoons?       @relation("background_banner")
+  top_banner        Webtoons?       @relation("top_banner")
+  mobile_banner     Webtoons?       @relation("mobile_banner")
+  episodes          Episodes[]
+  episode_images    EpisodeImages[]
+
+  @@map("images")
+}
+
+model Genres {
+  id             Int             @id @default(autoincrement())
+  name           String
+  webtoon_genres WebtoonGenres[]
+
+  @@map("genres")
+}
+
+model WebtoonGenres {
+  webtoon_id Int
+  genre_id   Int
+  webtoon    Webtoons @relation(fields: [webtoon_id], references: [id])
+  genre      Genres   @relation(fields: [genre_id], references: [id])
+
+  @@id([webtoon_id, genre_id])
+  @@map("webtoon_genres")
+}
+
+model Webtoons {
+  id                   Int             @id @default(autoincrement())
+  title                String
+  author               String
+  language             String
+  thumbnail_id         Int             @unique
+  thumbnail            Images          @relation(fields: [thumbnail_id], references: [id], name: "thumbnail")
+  background_banner_id Int             @unique
+  background_banner    Images          @relation(fields: [background_banner_id], references: [id], name: "background_banner")
+  top_banner_id        Int             @unique
+  top_banner           Images          @relation(fields: [top_banner_id], references: [id], name: "top_banner")
+  mobile_banner_id     Int             @unique
+  mobile_banner        Images          @relation(fields: [mobile_banner_id], references: [id], name: "mobile_banner")
+  genres               WebtoonGenres[]
+  episodes             Episodes[]
+
+  @@unique([title, author, language])
   @@map("webtoons")
 }
 
-model Episode {
-  id             Int            @id @default(autoincrement())
+model Episodes {
+  id             Int             @id @default(autoincrement())
   title          String
-  webtoon_id     Int
-  webtoon        Webtoon        @relation(fields: [webtoon_id], references: [id])
   number         Int
-  images_zip_sum String
-  thumbnail_sum  String
-  episode_images EpisodeImage[]
+  webtoon_id     Int
+  webtoon        Webtoons        @relation(fields: [webtoon_id], references: [id])
+  thumbnail_id   Int
+  thumbnail      Images          @relation(fields: [thumbnail_id], references: [id])
+  episode_images EpisodeImages[]
 
   @@unique([webtoon_id, number])
   @@map("episodes")
 }
 
-model EpisodeImage {
-  episode_id Int
-  episode    Episode @relation(fields: [episode_id], references: [id])
+model EpisodeImages {
   number     Int
-  sum        String
+  episode_id Int
+  episode    Episodes @relation(fields: [episode_id], references: [id])
+  image_id   Int      @unique
+  image      Images   @relation(fields: [image_id], references: [id])
 
   @@id([episode_id, number])
   @@map("episode_images")
