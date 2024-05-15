@@ -4,7 +4,7 @@ import {WebtoonParserService} from "./webtoon-parser.service";
 import CachedWebtoonModel from "./models/models/cached-webtoon.model";
 import EpisodeModel from "./models/models/episode.model";
 import EpisodeDataModel from "./models/models/episode-data.model";
-import {HttpException, Injectable} from "@nestjs/common";
+import {HttpException, Injectable, NotFoundException} from "@nestjs/common";
 import WebtoonModel from "./models/models/webtoon.model";
 import WebtoonDataModel from "./models/models/webtoon-data.model";
 import WebtoonQueue from "../../../common/utils/models/webtoon-queue";
@@ -71,10 +71,35 @@ export class DownloadManagerService{
             const startEpisode: number = await this.webtoonDatabase.getLastSavedEpisodeNumber(this.currentDownload.title, this.currentDownload.language);
             const epList: EpisodeModel[] = await this.webtoonParser.getEpisodes(this.currentDownload);
             for(let i = startEpisode; i < epList.length; i++){
+                if(!this.currentDownload)
+                    break;
                 const epImageLinks: string[] = await this.webtoonParser.getEpisodeLinks(this.currentDownload, epList[i]);
                 const episodeData: EpisodeDataModel = await this.webtoonDownloader.downloadEpisode(epList[i], epImageLinks);
+                if(!this.currentDownload)
+                    break;
                 await this.webtoonDatabase.saveEpisode(this.currentDownload, epList[i], episodeData);
             }
         }
+    }
+
+    getCurrentDownload(): CachedWebtoonModel | undefined{
+        if(this.currentDownload)
+            return this.currentDownload;
+        throw new NotFoundException("No download in progress.");
+    }
+
+    getDownloadQueue(): CachedWebtoonModel[]{
+        if(!this.currentDownload)
+            throw new NotFoundException("No download in progress.");;
+        return [this.currentDownload, ...this.queue.getElements()];
+    }
+
+    skipCurrentDownload(): void{
+        this.currentDownload = undefined;
+    }
+
+    clearDownloadQueue(){
+        this.queue.clear();
+        this.currentDownload = undefined;
     }
 }
