@@ -1,8 +1,9 @@
-import {Body, Controller, Post} from "@nestjs/common";
+import {Body, Controller, Delete, Get, HttpCode, Post} from "@nestjs/common";
 import {ApiResponse, ApiTags} from "@nestjs/swagger";
 import {DownloadManagerService} from "../webtoon/download-manager.service";
 import {AddWebtoonToQueueDto} from "./models/dto/add-webtoon-to-queue.dto";
 import {HttpStatusCode} from "axios";
+import CachedWebtoonModel from "../webtoon/models/models/cached-webtoon.model";
 
 
 @Controller("admin")
@@ -14,16 +15,44 @@ export class AdminController{
     ){}
 
     @Post("queue")
-    @ApiResponse({status: HttpStatusCode.Ok, description: "Adds a webtoon to the download queue"})
+    @ApiResponse({status: HttpStatusCode.Created, description: "Adds a webtoon to the download queue"})
     @ApiResponse({status: HttpStatusCode.TooEarly, description: "Cache not loaded."})
     async addWebtoonToQueue(@Body() addWebtoonToQueueDto: AddWebtoonToQueueDto): Promise<void>{
         return this.downloadManagerService.addWebtoonToQueue(addWebtoonToQueueDto.name, addWebtoonToQueueDto.language);
     }
 
     @Post("update/all")
-    @ApiResponse({status: HttpStatusCode.Ok, description: "Updates all webtoons in the database"})
+    @ApiResponse({status: HttpStatusCode.Created, description: "Updates all webtoons in the database"})
     @ApiResponse({status: HttpStatusCode.TooEarly, description: "Cache not loaded."})
     async updateAllWebtoons(): Promise<void>{
         return this.downloadManagerService.updateAllWebtoons();
+    }
+
+    @Get("current-download")
+    @ApiResponse({status: HttpStatusCode.Ok, description: "Returns the current download"})
+    @ApiResponse({status: HttpStatusCode.NotFound, description: "No download in progress"})
+    async getCurrentDownload(): Promise<CachedWebtoonModel>{
+        return this.downloadManagerService.getCurrentDownload();
+    }
+
+    @Get("queue")
+    @ApiResponse({status: HttpStatusCode.Ok, description: "Returns the current download queue"})
+    @ApiResponse({status: HttpStatusCode.NotFound, description: "No download in progress"})
+    async getQueue(): Promise<CachedWebtoonModel[]>{
+        return this.downloadManagerService.getDownloadQueue();
+    }
+
+    @Delete("current-download")
+    @HttpCode(HttpStatusCode.NoContent)
+    @ApiResponse({status: HttpStatusCode.NoContent, description: "Cancels the current download"})
+    async cancelCurrentDownload(): Promise<void>{
+        return this.downloadManagerService.skipCurrentDownload();
+    }
+
+    @Delete("queue")
+    @HttpCode(HttpStatusCode.NoContent)
+    @ApiResponse({status: HttpStatusCode.NoContent, description: "Clears the download queue"})
+    async clearQueue(): Promise<void>{
+        return this.downloadManagerService.clearDownloadQueue();
     }
 }
