@@ -1,16 +1,18 @@
-# Created by https://www.toptal.com/developers/gitignore/api/webstorm+all,node,database
-# Edit at https://www.toptal.com/developers/gitignore?templates=webstorm+all,node,database
+# Created by https://www.toptal.com/developers/gitignore/api/dotenv,webstorm+all,node,database
+# Edit at https://www.toptal.com/developers/gitignore?templates=dotenv,webstorm+all,node,database
 
 ### Database ###
 *.accdb
 *.db
-*.db-journal
 *.dbf
 *.mdb
 *.pdb
 *.sqlite3
 *.db-shm
 *.db-wal
+
+### dotenv ###
+.env
 
 ### Node ###
 # Logs
@@ -88,7 +90,6 @@ web_modules/
 .yarn-integrity
 
 # dotenv environment variable files
-.env
 .env.development.local
 .env.test.local
 .env.production.local
@@ -240,11 +241,6 @@ fabric.properties
 !.idea/codeStyles
 !.idea/runConfigurations
 
-# End of https://www.toptal.com/developers/gitignore/api/webstorm+all,node,database
-
-.env*
-.flaskenv*
-!.env.project
-!.env.vault
+# End of https://www.toptal.com/developers/gitignore/api/dotenv,webstorm+all,node,database
 
 images/
