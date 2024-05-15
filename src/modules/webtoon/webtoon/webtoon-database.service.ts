@@ -35,8 +35,19 @@ export class WebtoonDatabaseService{
             return;
         // Start prisma transaction
         await this.prismaService.$transaction(async(tx) => {
-            const thumbnailType = await tx.imageTypes.findFirst({where: {name: ImageTypes.EPISODE_THUMBNAIL}});
-            const imageType = await tx.imageTypes.findFirst({where: {name: ImageTypes.EPISODE_IMAGE}});
+            const imageTypes = await tx.imageTypes.findMany({
+                where: {
+                    name: {
+                        in: [
+                            ImageTypes.EPISODE_THUMBNAIL,
+                            ImageTypes.EPISODE_IMAGE
+                        ]
+                    }
+                }
+            });
+            const thumbnailType = imageTypes.find(type => type.name === ImageTypes.EPISODE_THUMBNAIL);
+            const imageType = imageTypes.find(type => type.name === ImageTypes.EPISODE_IMAGE);
+
             const thumbnailSum: string = this.saveImage(episodeData.thumbnail);
             const dbThumbnail = await tx.images.create({
                 data: {
@@ -63,16 +74,23 @@ export class WebtoonDatabaseService{
                     dbImage = await tx.images.create({
                         data: {
                             sum: imageSum,
-                            type_id: imageType.id
+                            type_id: imageType.id,
+                            episode_images: {
+                                create: {
+                                    number: i,
+                                    episode_id: dbEpisode.id
+                                }
+                            }
                         }
                     });
-                await tx.episodeImages.create({
-                    data: {
-                        number: i,
-                        episode_id: dbEpisode.id,
-                        image_id: dbImage.id
-                    }
-                });
+                else
+                    await tx.episodeImages.create({
+                        data: {
+                            number: i,
+                            episode_id: dbEpisode.id,
+                            image_id: dbImage.id
+                        }
+                    });
             }
         });
     }
@@ -82,21 +100,30 @@ export class WebtoonDatabaseService{
             return;
         await this.prismaService.$transaction(async(tx) => {
             const genreIds: number[] = [];
+            const genres = await tx.genres.findMany();
             for(const genre of webtoon.genres){
-                const dbGenre = await tx.genres.findFirst({
-                    where: {
-                        name: genre
-                    }
-                });
+                const dbGenre = genres.find(dbGenre => dbGenre.name === genre);
                 if(!dbGenre)
                     throw new NotFoundException(`Genre ${genre} not found in database.`);
                 genreIds.push(dbGenre.id);
             }
 
-            const thumbnailType = await tx.imageTypes.findFirst({where: {name: ImageTypes.WEBTOON_THUMBNAIL}});
-            const backgroundType = await tx.imageTypes.findFirst({where: {name: ImageTypes.WEBTOON_BACKGROUND_BANNER}});
-            const topType = await tx.imageTypes.findFirst({where: {name: ImageTypes.WEBTOON_TOP_BANNER}});
-            const mobileType = await tx.imageTypes.findFirst({where: {name: ImageTypes.WEBTOON_MOBILE_BANNER}});
+            const imageTypes = await tx.imageTypes.findMany({
+                where: {
+                    name: {
+                        in: [
+                            ImageTypes.WEBTOON_THUMBNAIL,
+                            ImageTypes.WEBTOON_BACKGROUND_BANNER,
+                            ImageTypes.WEBTOON_TOP_BANNER,
+                            ImageTypes.WEBTOON_MOBILE_BANNER
+                        ]
+                    }
+                }
+            });
+            const thumbnailType = imageTypes.find(type => type.name === ImageTypes.WEBTOON_THUMBNAIL);
+            const backgroundType = imageTypes.find(type => type.name === ImageTypes.WEBTOON_BACKGROUND_BANNER);
+            const topType = imageTypes.find(type => type.name === ImageTypes.WEBTOON_TOP_BANNER);
+            const mobileType = imageTypes.find(type => type.name === ImageTypes.WEBTOON_MOBILE_BANNER);
 
             const thumbnailSum: string = this.saveImage(webtoonData.thumbnail);
             const backgroundSum: string = this.saveImage(webtoonData.backgroundBanner);
