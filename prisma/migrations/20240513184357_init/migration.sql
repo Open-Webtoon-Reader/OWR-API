@@ -86,6 +86,3 @@ CREATE UNIQUE INDEX "webtoons_title_author_language_key" ON "webtoons"("title", 
 
 -- CreateIndex
 CREATE UNIQUE INDEX "episodes_webtoon_id_number_key" ON "episodes"("webtoon_id", "number");
-
--- CreateIndex
-CREATE UNIQUE INDEX "episode_images_image_id_key" ON "episode_images"("image_id");

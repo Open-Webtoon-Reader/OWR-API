@@ -92,7 +92,7 @@ model EpisodeImages {
   number     Int
   episode_id Int
   episode    Episodes @relation(fields: [episode_id], references: [id])
-  image_id   Int      @unique
+  image_id   Int
   image      Images   @relation(fields: [image_id], references: [id])
 
   @@id([episode_id, number])
