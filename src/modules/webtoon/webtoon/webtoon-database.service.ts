@@ -1,5 +1,4 @@
 import * as fs from "fs";
-import * as JSZip from "jszip";
 import CachedWebtoonModel from "./models/models/cached-webtoon.model";
 import EpisodeModel from "./models/models/episode.model";
 import EpisodeDataModel from "./models/models/episode-data.model";
@@ -12,6 +11,7 @@ import WebtoonDataModel from "./models/models/webtoon-data.model";
 import {Injectable, NotFoundException} from "@nestjs/common";
 import {PrismaService} from "../../misc/prisma.service";
 import {MiscService} from "../../misc/misc.service";
+import ImageTypes from "./models/enums/image-types";
 
 @Injectable()
 export class WebtoonDatabaseService{
@@ -24,115 +24,161 @@ export class WebtoonDatabaseService{
 
     async saveEpisode(webtoon: CachedWebtoonModel, episode: EpisodeModel, episodeData: EpisodeDataModel): Promise<void>{
         console.log(`Saving episode ${episode.number}...`);
-        const dbWebtoon = await this.prismaService.webtoon.findFirst({
+        const dbWebtoon = await this.prismaService.webtoons.findFirst({
             where: {
                 title: webtoon.title
             }
         });
         if(!dbWebtoon)
             throw new NotFoundException(`Webtoon ${webtoon.title} not found in database.`);
-        if(await this.isEpisodeSaved(dbWebtoon.id, episode.number)){
+        if(await this.isEpisodeSaved(dbWebtoon.id, episode.number))
             return;
-        }
-        // Generate sum for each image
-        const imagesSum: string[] = [];
-        for(const image of episodeData.images)
-            imagesSum.push(this.miscService.getSum(image));
-        // Saving
-        this.prismaService.$transaction(async(tx) => {
-            const imageZipSum: string = await this.saveEpisodeZip(episodeData, imagesSum);
-            const oldThumbnailSum: string | null = dbWebtoon.episodes_thumbnails_zip_sum;
-            const thumbnailZipSum: string = await this.saveEpisodeThumbnail(dbWebtoon, episodeData.thumbnail);
-            // Database saving
-            await this.saveEpisodeData(tx, episode, episodeData.thumbnail, dbWebtoon.id, imageZipSum, thumbnailZipSum, imagesSum);
-            // Remove old thumbnail zip
-            if(oldThumbnailSum)
-                fs.rmSync(`./images/webtoons/thumbnails/${oldThumbnailSum}.zip`, {force: true});
-            console.log(`Episode ${episode.number} saved!`);
-        });
-    }
-
-    private async saveEpisodeZip(episodeData: EpisodeDataModel, imagesSum: string[]): Promise<string>{
-        const zip: JSZip = new JSZip();
-        for(let i = 0; i < imagesSum.length; i++)
-            zip.file(`${imagesSum[i]}.webp`, episodeData.images[i]);
-        const [zipData, zipSum] = await this.miscService.generateZip(zip);
-        fs.mkdirSync("./images/webtoons/episodes", {recursive: true});
-        fs.writeFileSync(`./images/webtoons/episodes/${zipSum}.zip`, zipData);
-        return zipSum;
-    }
-
-    private async saveEpisodeData(tx: any, episode: EpisodeModel, episodeThumbnail: Buffer, webtoonId: number, zipSum: string, thumbnailZipSum: string, imagesSum: string[]): Promise<void>{
-        await tx.webtoon.update({
-            where: {
-                id: webtoonId
-            },
-            data: {
-                episodes_thumbnails_zip_sum: thumbnailZipSum
-            }
-        });
-        const dbEpisode = await tx.episode.create({
-            data: {
-                title: episode.title,
-                webtoon_id: webtoonId,
-                number: episode.number,
-                thumbnail_sum: this.miscService.getSum(episodeThumbnail),
-                images_zip_sum: zipSum
-            }
-        });
-        for(let i = 0; i < imagesSum.length; i++){
-            await tx.episodeImage.create({
-                data: {
-                    episode_id: dbEpisode.id,
-                    number: i + 1,
-                    sum: imagesSum[i]
+        // Start prisma transaction
+        await this.prismaService.$transaction(async(tx) => {
+            const imageTypes = await tx.imageTypes.findMany({
+                where: {
+                    name: {
+                        in: [
+                            ImageTypes.EPISODE_THUMBNAIL,
+                            ImageTypes.EPISODE_IMAGE
+                        ]
+                    }
                 }
             });
-        }
-    }
+            const thumbnailType = imageTypes.find(type => type.name === ImageTypes.EPISODE_THUMBNAIL);
+            const imageType = imageTypes.find(type => type.name === ImageTypes.EPISODE_IMAGE);
 
-    private async saveEpisodeThumbnail(dbWebtoon: any, episodeThumbnail: Buffer): Promise<string>{
-        const sum = dbWebtoon.episodes_thumbnails_zip_sum;
-        if(!sum){
-            const zip: JSZip = new JSZip();
-            zip.file(`${this.miscService.getSum(episodeThumbnail)}.webp`, episodeThumbnail);
-            const [zipData, zipSum] = await this.miscService.generateZip(zip);
-            fs.mkdirSync("./images/webtoons/thumbnails", {recursive: true});
-            fs.writeFileSync(`./images/webtoons/thumbnails/${zipSum}.zip`, zipData);
-            return zipSum;
-        }
-        const zip: JSZip = new JSZip();
-        const zipData: Buffer = fs.readFileSync(`./images/webtoons/thumbnails/${sum}.zip`);
-        await zip.loadAsync(zipData);
-        zip.file(`${this.miscService.getSum(episodeThumbnail)}.webp`, episodeThumbnail);
-        const [newZipData, newZipSum] = await this.miscService.generateZip(zip);
-        fs.writeFileSync(`./images/webtoons/thumbnails/${newZipSum}.zip`, newZipData);
-        return newZipSum;
+            const thumbnailSum: string = this.saveImage(episodeData.thumbnail);
+            const dbThumbnail = await tx.images.create({
+                data: {
+                    sum: thumbnailSum,
+                    type_id: thumbnailType.id
+                }
+            });
+            const dbEpisode = await tx.episodes.create({
+                data: {
+                    title: episode.title,
+                    number: episode.number,
+                    webtoon_id: dbWebtoon.id,
+                    thumbnail_id: dbThumbnail.id
+                }
+            });
+            for(let i = 0; i < episodeData.images.length; i++){
+                const imageSum: string = this.saveImage(episodeData.images[i]);
+                let dbImage = await tx.images.findUnique({
+                    where: {
+                        sum: imageSum
+                    }
+                });
+                if(!dbImage)
+                    dbImage = await tx.images.create({
+                        data: {
+                            sum: imageSum,
+                            type_id: imageType.id,
+                            episode_images: {
+                                create: {
+                                    number: i,
+                                    episode_id: dbEpisode.id
+                                }
+                            }
+                        }
+                    });
+                else
+                    await tx.episodeImages.create({
+                        data: {
+                            number: i,
+                            episode_id: dbEpisode.id,
+                            image_id: dbImage.id
+                        }
+                    });
+            }
+        });
     }
 
     async saveWebtoon(webtoon: WebtoonModel, webtoonData: WebtoonDataModel): Promise<void>{
         if(await this.isWebtoonSaved(webtoon.title, webtoon.language))
             return;
-        const thumbnailSum: string = this.saveWebtoonThumbnail(webtoonData.thumbnail);
-        const backgroundSum: string = this.saveWebtoonThumbnail(webtoonData.backgroundBanner);
-        const topSum: string = this.saveWebtoonThumbnail(webtoonData.topBanner);
-        const mobileSum: string = this.saveWebtoonThumbnail(webtoonData.mobileBanner);
-        await this.prismaService.webtoon.create({
-            data: {
-                title: webtoon.title,
-                language: webtoon.language,
-                author: webtoon.author,
-                episodes_thumbnails_zip_sum: null,
-                thumbnail_sum: thumbnailSum,
-                background_banner_sum: backgroundSum,
-                top_banner_sum: topSum,
-                mobile_banner_sum: mobileSum
+        await this.prismaService.$transaction(async(tx) => {
+            const genreIds: number[] = [];
+            const genres = await tx.genres.findMany();
+            for(const genre of webtoon.genres){
+                const dbGenre = genres.find(dbGenre => dbGenre.name === genre);
+                if(!dbGenre)
+                    throw new NotFoundException(`Genre ${genre} not found in database.`);
+                genreIds.push(dbGenre.id);
+            }
+
+            const imageTypes = await tx.imageTypes.findMany({
+                where: {
+                    name: {
+                        in: [
+                            ImageTypes.WEBTOON_THUMBNAIL,
+                            ImageTypes.WEBTOON_BACKGROUND_BANNER,
+                            ImageTypes.WEBTOON_TOP_BANNER,
+                            ImageTypes.WEBTOON_MOBILE_BANNER
+                        ]
+                    }
+                }
+            });
+            const thumbnailType = imageTypes.find(type => type.name === ImageTypes.WEBTOON_THUMBNAIL);
+            const backgroundType = imageTypes.find(type => type.name === ImageTypes.WEBTOON_BACKGROUND_BANNER);
+            const topType = imageTypes.find(type => type.name === ImageTypes.WEBTOON_TOP_BANNER);
+            const mobileType = imageTypes.find(type => type.name === ImageTypes.WEBTOON_MOBILE_BANNER);
+
+            const thumbnailSum: string = this.saveImage(webtoonData.thumbnail);
+            const backgroundSum: string = this.saveImage(webtoonData.backgroundBanner);
+            const topSum: string = this.saveImage(webtoonData.topBanner);
+            const mobileSum: string = this.saveImage(webtoonData.mobileBanner);
+
+            const dbThumbnail = await tx.images.create({
+                data: {
+                    sum: thumbnailSum,
+                    type_id: thumbnailType.id
+                }
+            });
+            const dbBackground = await tx.images.create({
+                data: {
+                    sum: backgroundSum,
+                    type_id: backgroundType.id
+                }
+            });
+            const dbTop = await tx.images.create({
+                data: {
+                    sum: topSum,
+                    type_id: topType.id
+                }
+            });
+            const dbMobile = await tx.images.create({
+                data: {
+                    sum: mobileSum,
+                    type_id: mobileType.id
+                }
+            });
+            const dbWebtoon = await tx.webtoons.create({
+                data: {
+                    title: webtoon.title,
+                    language: webtoon.language,
+                    author: webtoon.author,
+                    thumbnail_id: dbThumbnail.id,
+                    background_banner_id: dbBackground.id,
+                    top_banner_id: dbTop.id,
+                    mobile_banner_id: dbMobile.id
+                }
+            });
+
+            for(const genreId of genreIds){
+                await tx.webtoonGenres.create({
+                    data: {
+                        webtoon_id: dbWebtoon.id,
+                        genre_id: genreId
+                    }
+                });
             }
         });
     }
 
     async isWebtoonSaved(webtoonTitle: string, language: string): Promise<boolean>{
-        return !!await this.prismaService.webtoon.findFirst({
+        return !!await this.prismaService.webtoons.findFirst({
             where: {
                 title: webtoonTitle,
                 language: language
@@ -141,7 +187,7 @@ export class WebtoonDatabaseService{
     }
 
     async isEpisodeSaved(webtoonId: number, episodeNumber: number): Promise<boolean>{
-        return !!await this.prismaService.episode.findFirst({
+        return !!await this.prismaService.episodes.findFirst({
             where: {
                 webtoon_id: webtoonId,
                 number: episodeNumber
@@ -150,7 +196,7 @@ export class WebtoonDatabaseService{
     }
 
     async getLastSavedEpisodeNumber(webtoonTitle: string, language: string): Promise<number>{
-        const dbWebtoon = await this.prismaService.webtoon.findFirst({
+        const dbWebtoon = await this.prismaService.webtoons.findFirst({
             where: {
                 title: webtoonTitle,
                 language: language
@@ -158,7 +204,7 @@ export class WebtoonDatabaseService{
         });
         if(!dbWebtoon)
             throw new NotFoundException(`Webtoon ${webtoonTitle} not found in database.`);
-        const lastEpisode = await this.prismaService.episode.findFirst({
+        const lastEpisode = await this.prismaService.episodes.findFirst({
             where: {
                 webtoon_id: dbWebtoon.id
             },
@@ -170,7 +216,7 @@ export class WebtoonDatabaseService{
     }
 
     async getWebtoonList(): Promise<any[]>{
-        return this.prismaService.webtoon.findMany({
+        return this.prismaService.webtoons.findMany({
             select: {
                 title: true,
                 language: true
@@ -178,91 +224,105 @@ export class WebtoonDatabaseService{
         });
     }
 
-    private saveWebtoonThumbnail(data: Buffer): string{
-        const sum = this.miscService.getSum(data);
-        fs.mkdirSync("./images/thumbnails", {recursive: true});
-        fs.writeFileSync(`./images/thumbnails/${sum}.webp`, data);
-        return sum;
-    }
-
     async getWebtoons(): Promise<WebtoonResponse[]>{
-        const webtoons = await this.prismaService.webtoon.findMany({
-            select: {
-                id: true,
-                title: true,
-                author: true,
-                thumbnail_sum: true,
-                language: true
+        const webtoons = await this.prismaService.webtoons.findMany({
+            include: {
+                thumbnail: true
             }
         });
         const response: WebtoonResponse[] = [];
         for(const webtoon of webtoons){
-            const thumbnail: string = this.miscService.bufferToDataURL(fs.readFileSync(`./images/thumbnails/${webtoon.thumbnail_sum}.webp`));
+            const thumbnail: string = this.miscService.bufferToDataURL(this.loadImage(webtoon.thumbnail.sum));
             response.push(new WebtoonResponse(webtoon.id, webtoon.title, webtoon.language, thumbnail, webtoon.author));
         }
         return response;
     }
 
     async getEpisodeInfos(webtoonId: number): Promise<EpisodesResponse>{
-        const dbWebtoon = await this.prismaService.webtoon.findFirst({
+        const dbWebtoon = await this.prismaService.webtoons.findFirst({
             where: {
                 id: webtoonId
             },
-            select: {
-                title: true,
-                author: true,
-                background_banner_sum: true,
-                top_banner_sum: true,
-                mobile_banner_sum: true,
-                episodes_thumbnails_zip_sum: true
+            include: {
+                thumbnail: true,
+                background_banner: true,
+                top_banner: true,
+                mobile_banner: true,
             }
         });
         if(!dbWebtoon)
             throw new NotFoundException(`Webtoon with id ${webtoonId} not found in database.`);
-        const episodes = await this.prismaService.episode.findMany({
+        const episodes = await this.prismaService.episodes.findMany({
             where: {
                 webtoon_id: webtoonId
+            },
+            include: {
+                thumbnail: true
+            },
+            orderBy: {
+                number: "asc"
             }
         });
         const episodeLines: EpisodeLineModel[] = [];
-        const thumbnails: JSZip = await this.miscService.loadZip(`./images/webtoons/thumbnails/${dbWebtoon.episodes_thumbnails_zip_sum}.zip`);
         for(const episode of episodes){
-            const thumbnailData: Buffer | undefined = await thumbnails.file(`${episode.thumbnail_sum}.webp`)?.async("nodebuffer");
+            const thumbnailData: Buffer | undefined = this.loadImage(episode.thumbnail.sum);
             if(!thumbnailData)
-                throw new NotFoundException(`Thumbnail not found in zip for episode ${episode.number}`);
+                throw new NotFoundException(`Thumbnail not found for episode ${episode.number}`);
             const thumbnail: string = this.miscService.bufferToDataURL(thumbnailData);
             episodeLines.push(new EpisodeLineModel(episode.id, episode.title, episode.number, thumbnail));
         }
         return {
             episodes: episodeLines,
-            backgroundBanner: this.miscService.bufferToDataURL(fs.readFileSync(`./images/thumbnails/${dbWebtoon.background_banner_sum}.webp`)),
-            topBanner: this.miscService.bufferToDataURL(fs.readFileSync(`./images/thumbnails/${dbWebtoon.top_banner_sum}.webp`)),
-            mobileBanner: this.miscService.bufferToDataURL(fs.readFileSync(`./images/thumbnails/${dbWebtoon.mobile_banner_sum}.webp`)),
+            backgroundBanner: this.miscService.bufferToDataURL(this.loadImage(dbWebtoon.background_banner.sum)),
+            topBanner: this.miscService.bufferToDataURL(this.loadImage(dbWebtoon.top_banner.sum)),
+            mobileBanner: this.miscService.bufferToDataURL(this.loadImage(dbWebtoon.mobile_banner.sum)),
             title: dbWebtoon.title,
         } as EpisodesResponse;
     }
 
     async getEpisodeImages(episodeId: number): Promise<EpisodeResponse>{
-        const episode = await this.prismaService.episode.findFirst({
+        const episode = await this.prismaService.episodes.findFirst({
             where: {
                 id: episodeId,
             }
         });
         if(!episode)
             throw new NotFoundException(`Episode ${episodeId} not found in database.`);
-        const images = await this.prismaService.episodeImage.findMany({
+        const images = await this.prismaService.episodeImages.findMany({
             where: {
                 episode_id: episode.id
+            },
+            include: {
+                image: true
+            },
+            orderBy: {
+                number: "asc"
             }
         });
-        const zip: JSZip = await this.miscService.loadZip(`./images/webtoons/episodes/${episode.images_zip_sum}.zip`);
         const episodeImages: string[] = [];
         for(const image of images){
-            const imageData: Buffer | undefined = await zip.file(`${image.sum}.webp`)?.async("nodebuffer");
+            const imageData: Buffer | undefined = this.loadImage(image.image.sum);
             if(!imageData)
-                throw new NotFoundException(`Image not found in zip for episode ${episodeId}`);
+                throw new NotFoundException(`Image not found for episode ${episodeId}`);
             episodeImages.push(this.miscService.bufferToDataURL(imageData));
         }
         return new EpisodeResponse(episode.title, episodeImages);
+    }
+
+    private saveImage(image: Buffer): string{
+        if(!fs.existsSync("./images"))
+            fs.mkdirSync("./images");
+        const imageSum: string = this.miscService.getSum(image);
+        const folder = imageSum.substring(0, 2);
+        const path = `./images/${folder}`;
+        if(!fs.existsSync(path))
+            fs.mkdirSync(path);
+        fs.writeFileSync(`${path}/${imageSum}.webp`, image);
+        return imageSum;
+    }
+
+    private loadImage(imageSum: string): Buffer{
+        const folder = imageSum.substring(0, 2);
+        return fs.readFileSync(`./images/${folder}/${imageSum}.webp`);
     }
 }

@@ -16,13 +16,13 @@ export class WebtoonController{
         private readonly webtoonDatabaseService: WebtoonDatabaseService,
     ){}
 
-    @Get("list")
+    @Get()
     @ApiResponse({status: 200, description: "Returns a list of webtoons", type: WebtoonResponse, isArray: true})
     async getWebtoonList(): Promise<WebtoonResponse[]>{
         return this.webtoonDatabaseService.getWebtoons();
     }
 
-    @Get("episodes/:webtoonId")
+    @Get(":webtoonId/episodes")
     @ApiResponse({status: 200, description: "Returns a list of episodes for a webtoon", type: EpisodesResponse})
     async getWebtoonEpisodes(@Param() webtoonIdDto: WebtoonIdDto): Promise<EpisodesResponse>{
         return this.webtoonDatabaseService.getEpisodeInfos(webtoonIdDto.webtoonId);

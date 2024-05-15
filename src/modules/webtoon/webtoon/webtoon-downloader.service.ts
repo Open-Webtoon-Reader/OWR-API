@@ -15,19 +15,16 @@ export class WebtoonDownloaderService{
     async downloadEpisode(episode: EpisodeModel, imageUrls: string[]): Promise<EpisodeDataModel>{
         console.log(`Downloading episode ${episode.number}...`);
         const thumbnail: Buffer = await this.miscService.downloadImage(episode.thumbnail);
-        const images: Buffer[] = [];
+        const conversionPromises: Promise<Buffer>[] = [];
         for (let i = 0; i < imageUrls.length; i++){
             console.log(`Downloading image ${i + 1}/${imageUrls.length}...`);
             const url = imageUrls[i];
             const image = await this.miscService.downloadImage(url, episode.link);
-            images.push(image);
+            conversionPromises.push(this.miscService.convertImageToWebp(image));
             await new Promise(resolve => setTimeout(resolve, this.miscService.randomInt(50, 200)));
         }
         // Convert all images to webp
         console.log("Converting images to webp...");
-        const conversionPromises: Promise<Buffer>[] = [];
-        for (let i = 0; i < images.length; i++)
-            conversionPromises.push(this.miscService.convertImageToWebp(images[i]));
         const convertedImages: Buffer[] = await Promise.all(conversionPromises);
         console.log(`Download complete for episode ${episode.number}!`);
         return {
