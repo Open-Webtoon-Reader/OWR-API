@@ -6,10 +6,12 @@ import {EpisodeIdDto} from "./models/dto/episode-id.dto";
 import EpisodesResponse from "./models/responses/episodes.response";
 import EpisodeResponse from "./models/responses/episode.response";
 import WebtoonResponse from "./models/responses/webtoon.response";
+import {Throttle} from "@nestjs/throttler";
 
 
 @Controller("webtoons")
 @ApiTags("Webtoon")
+@Throttle({default: {limit: 15, ttl: 60000}})
 export class WebtoonController{
 
     constructor(

@@ -2,10 +2,12 @@ import {Controller, Get} from "@nestjs/common";
 import {ApiResponse, ApiTags} from "@nestjs/swagger";
 import {VersionResponse} from "./models/responses/version.response";
 import {ConfigService} from "@nestjs/config";
+import {Throttle} from "@nestjs/throttler";
 
 
 @Controller("version")
 @ApiTags("Version")
+@Throttle({default: {limit: 100, ttl: 60000}})
 export class VersionController{
 
     constructor(
