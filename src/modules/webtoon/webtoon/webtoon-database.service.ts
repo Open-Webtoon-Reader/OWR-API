@@ -264,13 +264,11 @@ export class WebtoonDatabaseService{
             }
         });
         const episodeLines: EpisodeLineModel[] = [];
-        for(const episode of episodes){
-            const thumbnailData: Buffer | undefined = this.loadImage(episode.thumbnail.sum);
-            if(!thumbnailData)
-                throw new NotFoundException(`Thumbnail not found for episode ${episode.number}`);
-            const thumbnail: string = this.miscService.bufferToDataURL(thumbnailData);
-            episodeLines.push(new EpisodeLineModel(episode.id, episode.title, episode.number, thumbnail));
-        }
+        const episodeLinesPromises: Promise<EpisodeLineModel>[] = [];
+        for(const episode of episodes)
+            episodeLinesPromises.push(this.loadEpisodeLine(episode));
+        for(const promise of episodeLinesPromises)
+            episodeLines.push(await promise);
         return {
             episodes: episodeLines,
             backgroundBanner: this.miscService.bufferToDataURL(this.loadImage(dbWebtoon.background_banner.sum)),
@@ -278,6 +276,14 @@ export class WebtoonDatabaseService{
             mobileBanner: this.miscService.bufferToDataURL(this.loadImage(dbWebtoon.mobile_banner.sum)),
             title: dbWebtoon.title,
         } as EpisodesResponse;
+    }
+
+    private async loadEpisodeLine(episode: any): Promise<EpisodeLineModel>{
+        const thumbnailData: Buffer | undefined = this.loadImage(episode.thumbnail.sum);
+        if(!thumbnailData)
+            throw new NotFoundException(`Thumbnail not found for episode ${episode.number}`);
+        const thumbnail: string = this.miscService.bufferToDataURL(thumbnailData);
+        return new EpisodeLineModel(episode.id, episode.title, episode.number, thumbnail);
     }
 
     async getEpisodeImages(episodeId: number): Promise<EpisodeResponse>{
