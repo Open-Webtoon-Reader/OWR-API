@@ -47,7 +47,7 @@ model Genres {
 model WebtoonGenres {
   webtoon_id Int
   genre_id   Int
-  webtoon    Webtoons @relation(fields: [webtoon_id], references: [id])
+  webtoon    Webtoons @relation(fields: [webtoon_id], references: [id], onDelete: Cascade)
   genre      Genres   @relation(fields: [genre_id], references: [id])
 
   @@id([webtoon_id, genre_id])
@@ -79,7 +79,7 @@ model Episodes {
   title          String
   number         Int
   webtoon_id     Int
-  webtoon        Webtoons        @relation(fields: [webtoon_id], references: [id])
+  webtoon        Webtoons        @relation(fields: [webtoon_id], references: [id], onDelete: Cascade)
   thumbnail_id   Int
   thumbnail      Images          @relation(fields: [thumbnail_id], references: [id])
   episode_images EpisodeImages[]
@@ -91,7 +91,7 @@ model Episodes {
 model EpisodeImages {
   number     Int
   episode_id Int
-  episode    Episodes @relation(fields: [episode_id], references: [id])
+  episode    Episodes @relation(fields: [episode_id], references: [id], onDelete: Cascade)
   image_id   Int
   image      Images   @relation(fields: [image_id], references: [id])
 
