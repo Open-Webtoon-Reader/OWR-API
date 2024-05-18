@@ -1,34 +1,27 @@
-import EpisodeLineModel from "../models/episode-line.model";
 import {ApiProperty} from "@nestjs/swagger";
+import LightWebtoonResponse from "./light-webtoon-response";
 
-export default class EpisodesResponse{
-    @ApiProperty()
-        episodes: EpisodeLineModel[];
+export default class WebtoonResponse extends LightWebtoonResponse{
     @ApiProperty()
         backgroundBanner: string;
     @ApiProperty()
         topBanner: string;
     @ApiProperty()
         mobileBanner: string;
-    @ApiProperty()
-        title: string;
-    @ApiProperty()
-        author: string;
 
     constructor(
-        episodes: EpisodeLineModel[],
+        id: number,
+        title: string,
+        language: string,
+        thumbnail: string,
+        author: string,
         backgroundBanner: string,
         topBanner: string,
         mobileBanner: string,
-        title: string,
-        author: string
     ){
-        this.episodes = episodes;
+        super(id, title, language, thumbnail, author);
         this.backgroundBanner = backgroundBanner;
         this.topBanner = topBanner;
         this.mobileBanner = mobileBanner;
-        this.title = title;
-        this.author = author;
     }
-
 }
