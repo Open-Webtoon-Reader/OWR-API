@@ -12,9 +12,12 @@ import {PrismaService} from "../../misc/prisma.service";
 import {MiscService} from "../../misc/misc.service";
 import ImageTypes from "./models/enums/image-types";
 import WebtoonResponse from "./models/responses/webtoon-response";
+import EpisodeChunkResponse from "./models/responses/episode-chunk.response";
 
 @Injectable()
 export class WebtoonDatabaseService{
+
+    private readonly CHUNK_SIZE: number = 25;
 
     constructor(
         private readonly prismaService: PrismaService,
@@ -267,7 +270,7 @@ export class WebtoonDatabaseService{
         );
     }
 
-    async getEpisodes(webtoonId: number): Promise<EpisodeLineModel[]>{
+    async getEpisodes(webtoonId: number, chunkNumber: number): Promise<EpisodeChunkResponse>{
         const dbWebtoon: any = await this.prismaService.webtoons.findFirst({
             where: {
                 id: webtoonId
@@ -275,6 +278,11 @@ export class WebtoonDatabaseService{
         });
         if(!dbWebtoon)
             throw new NotFoundException(`Webtoon with id ${webtoonId} not found in database.`);
+        const episodeCount: number = await this.prismaService.episodes.count({
+            where: {
+                webtoon_id: webtoonId
+            }
+        });
         const episodes: any[] = await this.prismaService.episodes.findMany({
             where: {
                 webtoon_id: webtoonId
@@ -284,14 +292,16 @@ export class WebtoonDatabaseService{
             },
             orderBy: {
                 number: "asc"
-            }
+            },
+            skip: (chunkNumber - 1) * this.CHUNK_SIZE,
+            take: this.CHUNK_SIZE
         });
-        const response: EpisodeLineModel[] = [];
+        const episodeLines: EpisodeLineModel[] = [];
         for(const episode of episodes){
             const thumbnail: string = this.miscService.bufferToDataURL(this.loadImage(episode.thumbnail.sum));
-            response.push(new EpisodeLineModel(episode.id, episode.title, episode.number, thumbnail));
+            episodeLines.push(new EpisodeLineModel(episode.id, episode.title, episode.number, thumbnail));
         }
-        return response;
+        return new EpisodeChunkResponse(episodeLines, chunkNumber, Math.ceil(episodeCount / this.CHUNK_SIZE));
     }
 
     async getEpisodeInfos(episodeId: number): Promise<EpisodeResponse>{

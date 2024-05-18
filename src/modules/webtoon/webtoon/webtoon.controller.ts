@@ -1,4 +1,4 @@
-import {Controller, Get, Param} from "@nestjs/common";
+import {Controller, Get, Param, Query} from "@nestjs/common";
 import {ApiResponse, ApiTags} from "@nestjs/swagger";
 import {WebtoonDatabaseService} from "./webtoon-database.service";
 import {WebtoonIdDto} from "./models/dto/webtoon-id.dto";
@@ -7,7 +7,8 @@ import EpisodeResponse from "./models/responses/episode.response";
 import LightWebtoonResponse from "./models/responses/light-webtoon-response";
 import {Throttle} from "@nestjs/throttler";
 import WebtoonResponse from "./models/responses/webtoon-response";
-import EpisodeLineModel from "./models/models/episode-line.model";
+import EpisodeChunkResponse from "./models/responses/episode-chunk.response";
+import {ChunkNumberDto} from "./models/dto/chunk-number.dto";
 
 @Controller("webtoons")
 @ApiTags("Webtoon")
@@ -32,10 +33,11 @@ export class WebtoonController{
     }
 
     @Get(":webtoonId/episodes")
-    @ApiResponse({status: 200, description: "Returns a list of episodes for a webtoon", type: EpisodeLineModel, isArray: true})
+    @ApiResponse({status: 200, description: "Returns a list of episodes for a webtoon", type: EpisodeChunkResponse})
     @ApiResponse({status: 404, description: "Webtoon not found"})
-    async getWebtoonEpisodes(@Param() webtoonIdDto: WebtoonIdDto): Promise<EpisodeLineModel[]>{
-        return this.webtoonDatabaseService.getEpisodes(webtoonIdDto.webtoonId);
+    async getWebtoonEpisodes(@Param() webtoonIdDto: WebtoonIdDto, @Query() chunkNumberDto: ChunkNumberDto): Promise<EpisodeChunkResponse>{
+        const chunk = chunkNumberDto.chunk ?? 1;
+        return this.webtoonDatabaseService.getEpisodes(webtoonIdDto.webtoonId, chunk);
     }
 
     @Get("episodes/:episodeId")
