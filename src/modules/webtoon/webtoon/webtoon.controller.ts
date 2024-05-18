@@ -33,6 +33,7 @@ export class WebtoonController{
     }
 
     @Get(":webtoonId/episodes")
+    @Throttle({default: {limit: 100, ttl: 60000}})
     @ApiResponse({status: 200, description: "Returns a list of episodes for a webtoon", type: EpisodeChunkResponse})
     @ApiResponse({status: 404, description: "Webtoon not found"})
     async getWebtoonEpisodes(@Param() webtoonIdDto: WebtoonIdDto, @Query() chunkNumberDto: ChunkNumberDto): Promise<EpisodeChunkResponse>{
