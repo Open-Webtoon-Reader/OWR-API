@@ -17,7 +17,7 @@ import EpisodeChunkResponse from "./models/responses/episode-chunk.response";
 @Injectable()
 export class WebtoonDatabaseService{
 
-    private readonly CHUNK_SIZE: number = 25;
+    private readonly CHUNK_SIZE: number = 15;
 
     constructor(
         private readonly prismaService: PrismaService,
