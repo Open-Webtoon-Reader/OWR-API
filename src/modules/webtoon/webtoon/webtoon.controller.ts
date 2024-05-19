@@ -9,6 +9,7 @@ import {Throttle} from "@nestjs/throttler";
 import WebtoonResponse from "./models/responses/webtoon-response";
 import EpisodeChunkResponse from "./models/responses/episode-chunk.response";
 import {ChunkNumberDto} from "./models/dto/chunk-number.dto";
+import ImagesChunkResponse from "./models/responses/images-chunk.response";
 
 @Controller("webtoons")
 @ApiTags("Webtoon")
@@ -48,8 +49,9 @@ export class WebtoonController{
     }
 
     @Get("episodes/:episodeId/images")
-    @ApiResponse({status: 200, description: "Returns a list of images for an episode", type: String, isArray: true})
-    async getEpisodeImages(@Param() episodeIdDto: EpisodeIdDto): Promise<string[]>{
-        return this.webtoonDatabaseService.getEpisodeImages(episodeIdDto.episodeId);
+    @ApiResponse({status: 200, description: "Returns a list of images for an episode", type: ImagesChunkResponse})
+    async getEpisodeImages(@Param() episodeIdDto: EpisodeIdDto, @Query() chunkNumberDto: ChunkNumberDto): Promise<ImagesChunkResponse>{
+        const chunk = chunkNumberDto.chunk ?? 1;
+        return this.webtoonDatabaseService.getEpisodeImages(episodeIdDto.episodeId, chunk);
     }
 }

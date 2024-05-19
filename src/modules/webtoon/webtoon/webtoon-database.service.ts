@@ -13,11 +13,12 @@ import {MiscService} from "../../misc/misc.service";
 import ImageTypes from "./models/enums/image-types";
 import WebtoonResponse from "./models/responses/webtoon-response";
 import EpisodeChunkResponse from "./models/responses/episode-chunk.response";
+import ImagesChunkResponse from "./models/responses/images-chunk.response";
 
 @Injectable()
 export class WebtoonDatabaseService{
 
-    private readonly CHUNK_SIZE: number = 15;
+    private readonly CHUNK_SIZE: number = 10;
 
     constructor(
         private readonly prismaService: PrismaService,
@@ -315,7 +316,7 @@ export class WebtoonDatabaseService{
         return new EpisodeResponse(episode.title);
     }
 
-    async getEpisodeImages(episodeId: number): Promise<string[]>{
+    async getEpisodeImages(episodeId: number, chunkNumber: number): Promise<ImagesChunkResponse>{
         const episode: any = await this.prismaService.episodes.findFirst({
             where: {
                 id: episodeId
@@ -323,7 +324,12 @@ export class WebtoonDatabaseService{
         });
         if(!episode)
             throw new NotFoundException(`Episode with id ${episodeId} not found in database.`);
-        const images: any[] = await this.prismaService.episodeImages.findMany({
+        const imagesCount: number = await this.prismaService.episodeImages.count({
+            where: {
+                episode_id: episodeId
+            }
+        });
+        const dbImages: any[] = await this.prismaService.episodeImages.findMany({
             where: {
                 episode_id: episodeId
             },
@@ -332,12 +338,14 @@ export class WebtoonDatabaseService{
             },
             orderBy: {
                 number: "asc"
-            }
+            },
+            skip: (chunkNumber - 1) * this.CHUNK_SIZE,
+            take: this.CHUNK_SIZE
         });
-        const response: string[] = [];
-        for(const image of images)
-            response.push(this.miscService.bufferToDataURL(this.loadImage(image.image.sum)));
-        return response;
+        const images: string[] = [];
+        for(const image of dbImages)
+            images.push(this.miscService.bufferToDataURL(this.loadImage(image.image.sum)));
+        return new ImagesChunkResponse(images, chunkNumber, Math.ceil(imagesCount / this.CHUNK_SIZE));
     }
 
     private saveImage(image: Buffer): string{
