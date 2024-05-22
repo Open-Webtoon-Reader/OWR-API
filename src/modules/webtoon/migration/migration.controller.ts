@@ -16,7 +16,7 @@ export class MigrationController{
 
     @Post("from")
     async migrateFrom(@Body() migrateFromDto: MigrateFromDto): Promise<void>{
-        return this.migrationService.migrateFrom(migrateFromDto.url, migrateFromDto.adminKey);
+        this.migrationService.migrateFrom(migrateFromDto.url, migrateFromDto.adminKey);
     }
 
     @Get("infos")

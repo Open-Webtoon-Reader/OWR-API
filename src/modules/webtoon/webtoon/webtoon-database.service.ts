@@ -20,7 +20,7 @@ import MigrationInfosResponse from "../migration/models/responses/migration-info
 export class WebtoonDatabaseService{
 
     private readonly CHUNK_SIZE: number = 10;
-    private readonly MIGRATION_CHUNK_SIZE: number = 50;
+    private readonly MIGRATION_CHUNK_SIZE: number = 10000;
 
     constructor(
         private readonly prismaService: PrismaService,
