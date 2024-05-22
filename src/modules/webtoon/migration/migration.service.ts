@@ -19,7 +19,7 @@ export class MigrationService{
         // Get migration infos using axios from the url
         const response = await axios.get(url + "/api/v1/migration/infos", {
             headers: {
-                "Authorization": adminKey
+                "Authorization": "Bearer " + adminKey
             }
         });
         const migrationInfos: MigrationInfosResponse = response.data;
@@ -62,7 +62,7 @@ export class MigrationService{
             const response = await axios.get(fileUrl, {
                 responseType: "stream",
                 headers: {
-                    "Authorization": adminKey
+                    "Authorization": "Bearer " + adminKey
                 }
             });
 
