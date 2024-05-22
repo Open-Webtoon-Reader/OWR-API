@@ -10,6 +10,6 @@ import {MiscModule} from "../../misc/misc.module";
     imports: [MiscModule],
     controllers: [WebtoonController],
     providers: [WebtoonParserService, WebtoonDownloaderService, WebtoonDatabaseService, DownloadManagerService],
-    exports: [DownloadManagerService],
+    exports: [DownloadManagerService, WebtoonDatabaseService],
 })
 export class WebtoonModule{}

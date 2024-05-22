@@ -19,6 +19,7 @@ import ImagesChunkResponse from "./models/responses/images-chunk.response";
 export class WebtoonDatabaseService{
 
     private readonly CHUNK_SIZE: number = 10;
+    private readonly MIGRATION_CHUNK_SIZE: number = 1000;
 
     constructor(
         private readonly prismaService: PrismaService,
@@ -346,6 +347,10 @@ export class WebtoonDatabaseService{
         for(const image of dbImages)
             images.push(this.miscService.bufferToDataURL(this.loadImage(image.image.sum)));
         return new ImagesChunkResponse(images, chunkNumber, Math.ceil(imagesCount / this.CHUNK_SIZE));
+    }
+
+    async getMigrationInfos(chunkNumber: number){
+
     }
 
     private saveImage(image: Buffer): string{
