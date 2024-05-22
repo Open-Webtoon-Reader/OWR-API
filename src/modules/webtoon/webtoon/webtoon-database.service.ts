@@ -14,12 +14,13 @@ import ImageTypes from "./models/enums/image-types";
 import WebtoonResponse from "./models/responses/webtoon-response";
 import EpisodeChunkResponse from "./models/responses/episode-chunk.response";
 import ImagesChunkResponse from "./models/responses/images-chunk.response";
+import MigrationInfosResponse from "../migration/models/responses/migration-infos.response";
 
 @Injectable()
 export class WebtoonDatabaseService{
 
     private readonly CHUNK_SIZE: number = 10;
-    private readonly MIGRATION_CHUNK_SIZE: number = 1000;
+    private readonly MIGRATION_CHUNK_SIZE: number = 50;
 
     constructor(
         private readonly prismaService: PrismaService,
@@ -349,11 +350,24 @@ export class WebtoonDatabaseService{
         return new ImagesChunkResponse(images, chunkNumber, Math.ceil(imagesCount / this.CHUNK_SIZE));
     }
 
-    async getMigrationInfos(chunkNumber: number){
-
+    async getMigrationInfos(): Promise<MigrationInfosResponse>{
+        const imageCount: number = await this.prismaService.images.count();
+        const chunkCount: number = Math.ceil(imageCount / this.MIGRATION_CHUNK_SIZE);
+        return new MigrationInfosResponse(imageCount, chunkCount);
     }
 
-    private saveImage(image: Buffer): string{
+    async getImages(chunkNumber: number): Promise<Record<string, Buffer>>{
+        const dbImages: any[] = await this.prismaService.images.findMany({
+            skip: (chunkNumber - 1) * this.MIGRATION_CHUNK_SIZE,
+            take: this.MIGRATION_CHUNK_SIZE
+        });
+        const images: Record<string, Buffer> = {};
+        for(const image of dbImages)
+            images[image.sum] = this.loadImage(image.sum);
+        return images;
+    }
+
+    saveImage(image: Buffer): string{
         if(!fs.existsSync("./images"))
             fs.mkdirSync("./images");
         const imageSum: string = this.miscService.getSum(image);
