@@ -8,7 +8,7 @@ import LightWebtoonResponse from "./models/responses/light-webtoon-response";
 import {Throttle} from "@nestjs/throttler";
 import WebtoonResponse from "./models/responses/webtoon-response";
 import EpisodeChunkResponse from "./models/responses/episode-chunk.response";
-import {ChunkNumberDto} from "./models/dto/chunk-number.dto";
+import {ChunkNumberDto} from "../../../common/models/dto/chunk-number.dto";
 import ImagesChunkResponse from "./models/responses/images-chunk.response";
 
 @Controller("webtoons")
