@@ -17,7 +17,7 @@ export class MigrationService{
 
     async migrateFrom(url: string, adminKey: string){
         // Get migration infos using axios from the url
-        const response = await axios.get(url, {
+        const response = await axios.get(url + "/api/v1/migration/infos", {
             headers: {
                 "Authorization": adminKey
             }
@@ -25,7 +25,7 @@ export class MigrationService{
         const migrationInfos: MigrationInfosResponse = response.data;
         // Migrate the data
         for(let i = 1; i <= migrationInfos.chunkNumber; i++){
-            const imageZipBuffer: Buffer = await this.downloadFile(`${url}/images?chunk=${i}`, adminKey);
+            const imageZipBuffer: Buffer = await this.downloadFile(`${url}/api/v1/migration/images?chunk=${i}`, adminKey);
             const imageZip: JSZip = await JSZip.loadAsync(imageZipBuffer);
             const images: Record<string, Buffer> = {};
             for(const [fileName, file] of Object.entries(imageZip.files))
@@ -35,7 +35,7 @@ export class MigrationService{
         }
         // Database migration
         await this.prismaService.onModuleDestroy();
-        const databaseBuffer: Buffer = await this.downloadFile(`${url}/database`, adminKey);
+        const databaseBuffer: Buffer = await this.downloadFile(`${url}/api/v1/migration/database`, adminKey);
         fs.writeFileSync("./prisma/database.db", databaseBuffer);
         await this.prismaService.onModuleInit();
     }
