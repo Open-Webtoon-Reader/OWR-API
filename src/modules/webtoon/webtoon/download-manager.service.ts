@@ -63,6 +63,7 @@ export class DownloadManagerService{
             this.currentDownload = this.queue.dequeue();
             if(!this.currentDownload)
                 return;
+            console.log(`Downloading ${this.currentDownload.title} (${this.currentDownload.language}).`);
             if(!await this.webtoonDatabase.isWebtoonSaved(this.currentDownload.title, this.currentDownload.language)){
                 const webtoon: WebtoonModel = await this.webtoonParser.getWebtoonInfos(this.currentDownload);
                 const webtoonData: WebtoonDataModel = await this.webtoonDownloader.downloadWebtoon(webtoon);
