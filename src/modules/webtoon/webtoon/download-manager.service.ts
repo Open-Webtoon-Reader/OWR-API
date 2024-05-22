@@ -80,6 +80,7 @@ export class DownloadManagerService{
                 await this.webtoonDatabase.saveEpisode(this.currentDownload, epList[i], episodeData);
             }
         }
+        this.currentDownload = undefined;
     }
 
     getCurrentDownload(): CachedWebtoonModel | undefined{
