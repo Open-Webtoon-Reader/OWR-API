@@ -7,7 +7,7 @@ import EpisodeLineModel from "./models/models/episode-line.model";
 import LightWebtoonResponse from "./models/responses/light-webtoon-response";
 import WebtoonModel from "./models/models/webtoon.model";
 import WebtoonDataModel from "./models/models/webtoon-data.model";
-import {Injectable, NotFoundException} from "@nestjs/common";
+import {Injectable, Logger, NotFoundException} from "@nestjs/common";
 import {PrismaService} from "../../misc/prisma.service";
 import {MiscService} from "../../misc/misc.service";
 import ImageTypes from "./models/enums/image-types";
@@ -22,13 +22,15 @@ export class WebtoonDatabaseService{
     private readonly CHUNK_SIZE: number = 10;
     private readonly MIGRATION_CHUNK_SIZE: number = 10000;
 
+    private readonly logger = new Logger(WebtoonDatabaseService.name);
+
     constructor(
         private readonly prismaService: PrismaService,
         private readonly miscService: MiscService
     ){}
 
     async saveEpisode(webtoon: CachedWebtoonModel, episode: EpisodeModel, episodeData: EpisodeDataModel): Promise<void>{
-        console.log(`Saving episode ${episode.number}...`);
+        this.logger.debug(`Saving episode ${episode.number}...`);
         const dbWebtoon = await this.prismaService.webtoons.findFirst({
             where: {
                 title: webtoon.title
