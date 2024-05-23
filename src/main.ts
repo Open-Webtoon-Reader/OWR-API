@@ -72,7 +72,7 @@ async function startHttpsServer(){
     const httpsApp = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter({https: httpsOptions}));
     await loadServer(httpsApp, getServerAddress(process.env.BIND_ADDRESS, process.env.HTTP_PORT, "https"));
     await httpsApp.listen(process.env.HTTPS_PORT, process.env.BIND_ADDRESS);
-    logServerStart(process.env.BIND_ADDRESS, process.env.HTTP_PORT, "https");
+    logServerStart(process.env.BIND_ADDRESS, process.env.HTTPS_PORT, "https");
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
