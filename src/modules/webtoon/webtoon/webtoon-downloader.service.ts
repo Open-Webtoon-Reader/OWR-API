@@ -2,31 +2,45 @@ import EpisodeModel from "./models/models/episode.model";
 import EpisodeDataModel from "./models/models/episode-data.model";
 import WebtoonDataModel from "./models/models/webtoon-data.model";
 import WebtoonModel from "./models/models/webtoon.model";
-import {Injectable} from "@nestjs/common";
+import {Injectable, Logger} from "@nestjs/common";
 import {MiscService} from "../../misc/misc.service";
 
 @Injectable()
 export class WebtoonDownloaderService{
 
+    private readonly logger = new Logger(WebtoonDownloaderService.name);
+
     constructor(
         private readonly miscService: MiscService,
     ){}
 
-    async downloadEpisode(episode: EpisodeModel, imageUrls: string[]): Promise<EpisodeDataModel>{
-        console.log(`Downloading episode ${episode.number}...`);
+    async downloadEpisode(episode: EpisodeModel, imageUrls: string[]): Promise<EpisodeDataModel> {
+        this.logger.debug(`Downloading episode ${episode.number}...`);
+        const startTime = Date.now();
         const thumbnail: Buffer = await this.miscService.downloadImage(episode.thumbnail);
         const conversionPromises: Promise<Buffer>[] = [];
-        for (let i = 0; i < imageUrls.length; i++){
-            console.log(`Downloading image ${i + 1}/${imageUrls.length}...`);
+        let downloadedCount = 0;
+
+        const interval = setInterval(() => {
+            const elapsedSeconds = (Date.now() - startTime) / 1000;
+            const imagesPerSecond = downloadedCount / elapsedSeconds;
+            this.logger.debug(`Downloading ${downloadedCount} of ${imageUrls.length} images (${(imagesPerSecond).toFixed(2)} images/s)...`);
+        }, 1000);
+
+        for (let i = 0; i < imageUrls.length; i++) {
             const url = imageUrls[i];
             const image = await this.miscService.downloadImage(url, episode.link);
             conversionPromises.push(this.miscService.convertImageToWebp(image));
+            downloadedCount++;
             await new Promise(resolve => setTimeout(resolve, this.miscService.randomInt(50, 200)));
         }
+
+        clearInterval(interval);
+        this.logger.debug(`Downloaded ${downloadedCount}/${imageUrls.length} images in ${((Date.now() - startTime) / 1000).toFixed(2)} seconds.`);
+
         // Convert all images to webp
-        console.log("Converting images to webp...");
         const convertedImages: Buffer[] = await Promise.all(conversionPromises);
-        console.log(`Download complete for episode ${episode.number}!`);
+        this.logger.debug(`Download complete for episode ${episode.number}!`);
         return {
             thumbnail,
             images: convertedImages

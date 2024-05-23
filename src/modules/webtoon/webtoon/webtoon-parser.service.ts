@@ -24,20 +24,20 @@ export class WebtoonParserService{
     async loadCache(): Promise<void>{
         // Load existing cache
         if(fs.existsSync("./.cache/webtoons.json")){
-            this.logger.log("Loading webtoon list from cache...");
+            this.logger.debug("Loading webtoon list from cache...");
             this.webtoons = JSON.parse(fs.readFileSync("./.cache/webtoons.json").toString());
             const webtoonCount = Object.values(this.webtoons).reduce((acc, val: any) => acc + val.length, 0);
-            this.logger.log(`Loaded ${webtoonCount} webtoons!`);
+            this.logger.debug(`Loaded ${webtoonCount} webtoons!`);
             return;
         }
-        this.logger.log("Loading webtoon list...");
+        this.logger.debug("Loading webtoon list...");
         // Generate and save cache
         for (const language of Object.values(WebtoonLanguages)){
-            this.logger.log(`Loading webtoons for language: ${language}`);
+            this.logger.debug(`Loading webtoons for language: ${language}`);
             this.webtoons[language] = await this.getWebtoonsFromLanguage(language);
         }
         const webtoonCount = Object.values(this.webtoons).reduce((acc, val: any) => acc + val.length, 0);
-        this.logger.log(`Loaded ${webtoonCount} webtoons!`);
+        this.logger.debug(`Loaded ${webtoonCount} webtoons!`);
         // Save cache
         fs.mkdirSync("./.cache", {recursive: true});
         fs.writeFileSync("./.cache/webtoons.json", JSON.stringify(this.webtoons, null, 2));

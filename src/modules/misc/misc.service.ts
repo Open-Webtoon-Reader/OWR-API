@@ -12,12 +12,31 @@ export class MiscService{
 
     private readonly axiosInstance: AxiosInstance;
 
+    private readonly userAgents: string[] = [
+        "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/535.1 (KHTML, like Gecko) Chrome/13.0.782.112 Safari/535.1",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/121.0",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 14.1; rv:109.0) Gecko/20100101 Firefox/121.0",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.2210.91",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.2210.91",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 OPR/106.0.0.0",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 OPR/106.0.0.0",
+    ]
+
     constructor(){
         this.axiosInstance = axios.create({});
-        this.axiosInstance.defaults.headers.common["User-Agent"] = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/535.1 (KHTML, like Gecko) Chrome/13.0.782.112 Safari/535.1";
+        this.randomUserAgentChange(1);
+    }
+
+    randomUserAgentChange(probability: number = 0){
+        if(Math.random() > probability)
+            return;
+        this.axiosInstance.defaults.headers.common["User-Agent"] = this.userAgents[this.randomInt(0, this.userAgents.length - 1)];
     }
 
     getAxiosInstance(){
+        this.randomUserAgentChange(0.1);
         return this.axiosInstance;
     }
 
@@ -69,7 +88,7 @@ export class MiscService{
     }
 
     async downloadImage(url: string, referer: string = "https://www.webtoons.com/fr/"): Promise<Buffer>{
-        const response = await this.axiosInstance.get(url, {
+        const response = await this.getAxiosInstance().get(url, {
             responseType: "arraybuffer",
             headers: {
                 "Referer": referer

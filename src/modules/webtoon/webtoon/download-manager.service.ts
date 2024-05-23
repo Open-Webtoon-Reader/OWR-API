@@ -4,7 +4,7 @@ import {WebtoonParserService} from "./webtoon-parser.service";
 import CachedWebtoonModel from "./models/models/cached-webtoon.model";
 import EpisodeModel from "./models/models/episode.model";
 import EpisodeDataModel from "./models/models/episode-data.model";
-import {HttpException, Injectable, NotFoundException} from "@nestjs/common";
+import {HttpException, Injectable, Logger, NotFoundException} from "@nestjs/common";
 import WebtoonModel from "./models/models/webtoon.model";
 import WebtoonDataModel from "./models/models/webtoon-data.model";
 import WebtoonQueue from "../../../common/utils/models/webtoon-queue";
@@ -12,6 +12,8 @@ import {HttpStatusCode} from "axios";
 
 @Injectable()
 export class DownloadManagerService{
+
+    private readonly logger = new Logger(DownloadManagerService.name);
 
     private cacheLoaded: boolean = false;
     private readonly cachePromise: Promise<void>;
@@ -63,7 +65,7 @@ export class DownloadManagerService{
             this.currentDownload = this.queue.dequeue();
             if(!this.currentDownload)
                 return;
-            console.log(`Downloading ${this.currentDownload.title} (${this.currentDownload.language}).`);
+            this.logger.debug(`Downloading ${this.currentDownload.title} (${this.currentDownload.language}).`);
             if(!await this.webtoonDatabase.isWebtoonSaved(this.currentDownload.title, this.currentDownload.language)){
                 const webtoon: WebtoonModel = await this.webtoonParser.getWebtoonInfos(this.currentDownload);
                 const webtoonData: WebtoonDataModel = await this.webtoonDownloader.downloadWebtoon(webtoon);
