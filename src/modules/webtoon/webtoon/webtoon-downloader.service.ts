@@ -32,7 +32,7 @@ export class WebtoonDownloaderService{
             const image = await this.miscService.downloadImage(url, episode.link);
             conversionPromises.push(this.miscService.convertImageToWebp(image));
             downloadedCount++;
-            await new Promise(resolve => setTimeout(resolve, this.miscService.randomInt(50, 200)));
+            // await new Promise(resolve => setTimeout(resolve, this.miscService.randomInt(50, 200)));
         }
 
         clearInterval(interval);
