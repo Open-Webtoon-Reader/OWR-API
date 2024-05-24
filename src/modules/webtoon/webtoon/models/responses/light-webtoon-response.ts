@@ -10,19 +10,23 @@ export default class LightWebtoonResponse{
     @ApiProperty()
         author: string;
     @ApiProperty()
+        genres: string[];
+    @ApiProperty()
         thumbnail: string; // As dataurl
 
     constructor(
         id: number,
         title: string,
         language: string,
-        thumbnail: string,
         author: string,
+        genres: string[],
+        thumbnail: string,
     ){
         this.id = id;
         this.title = title;
         this.language = language;
-        this.thumbnail = thumbnail;
         this.author = author;
+        this.genres = genres;
+        this.thumbnail = thumbnail;
     }
 }

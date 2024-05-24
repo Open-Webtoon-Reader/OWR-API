@@ -234,13 +234,25 @@ export class WebtoonDatabaseService{
     async getWebtoons(): Promise<LightWebtoonResponse[]>{
         const webtoons: any = await this.prismaService.webtoons.findMany({
             include: {
-                thumbnail: true
+                thumbnail: true,
+                genres: {
+                    include: {
+                        genre: true
+                    }
+                }
             }
         });
         const response: LightWebtoonResponse[] = [];
         for(const webtoon of webtoons){
             const thumbnail: string = this.miscService.bufferToDataURL(this.loadImage(webtoon.thumbnail.sum));
-            response.push(new LightWebtoonResponse(webtoon.id, webtoon.title, webtoon.language, thumbnail, webtoon.author));
+            response.push(new LightWebtoonResponse(
+                webtoon.id,
+                webtoon.title,
+                webtoon.language,
+                webtoon.author,
+                webtoon.genres.map((genre: any) => genre.genre.name),
+                thumbnail
+            ));
         }
         return response;
     }
@@ -254,7 +266,12 @@ export class WebtoonDatabaseService{
                 thumbnail: true,
                 background_banner: true,
                 top_banner: true,
-                mobile_banner: true
+                mobile_banner: true,
+                genres: {
+                    include: {
+                        genre: true
+                    }
+                }
             }
         });
         if(!webtoon)
@@ -267,8 +284,9 @@ export class WebtoonDatabaseService{
             webtoon.id,
             webtoon.title,
             webtoon.language,
-            thumbnail,
             webtoon.author,
+            webtoon.genres.map((genre: any) => genre.genre.name),
+            thumbnail,
             backgroundBanner,
             topBanner,
             mobileBanner
