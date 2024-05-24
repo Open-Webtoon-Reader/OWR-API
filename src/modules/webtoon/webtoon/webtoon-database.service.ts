@@ -233,6 +233,9 @@ export class WebtoonDatabaseService{
 
     async getWebtoons(): Promise<LightWebtoonResponse[]>{
         const webtoons: any = await this.prismaService.webtoons.findMany({
+            orderBy: {
+                title: "asc"
+            },
             include: {
                 thumbnail: true,
                 genres: {
@@ -314,7 +317,7 @@ export class WebtoonDatabaseService{
                 thumbnail: true
             },
             orderBy: {
-                number: "asc"
+                number: "desc"
             },
             skip: (chunkNumber - 1) * this.CHUNK_SIZE,
             take: this.CHUNK_SIZE

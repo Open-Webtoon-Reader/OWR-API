@@ -21,8 +21,6 @@ export class LoggerMiddleware implements NestMiddleware{
                 const nRes = res as any;
                 const resSize = nRes._contentLength || "0";
                 const intResSize = parseInt(resSize);
-                if(!path.includes("/api/v")) // TODO: Fix that
-                    return;
                 LoggerMiddleware.logger.log(`${httpOrHttps} ${method} ${path} ${statusCode} ${duration}ms ${intResSize}`);
                 LoggerMiddleware.requestTimeLogger(path, method, duration);
             }catch(e){
