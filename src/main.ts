@@ -24,10 +24,6 @@ async function bootstrap(){
         case "https":
             await startHttpsServer();
             break;
-        case "both":
-            await startHttpServer();
-            await startHttpsServer();
-            break;
         default:
             logger.error("Invalid SERVER_TYPE");
             process.exit(1);
