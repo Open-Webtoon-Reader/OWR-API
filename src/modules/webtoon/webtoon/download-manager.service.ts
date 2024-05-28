@@ -9,6 +9,7 @@ import WebtoonModel from "./models/models/webtoon.model";
 import WebtoonDataModel from "./models/models/webtoon-data.model";
 import WebtoonQueue from "../../../common/utils/models/webtoon-queue";
 import {HttpStatusCode} from "axios";
+import DownloadQueue from "../../../common/utils/models/download-queue";
 
 @Injectable()
 export class DownloadManagerService{
@@ -17,17 +18,26 @@ export class DownloadManagerService{
 
     private cacheLoaded: boolean = false;
     private readonly cachePromise: Promise<void>;
-    private readonly queue: WebtoonQueue;
-    private currentDownload: CachedWebtoonModel | undefined;
+    private readonly downloadQueue: DownloadQueue;
 
     constructor(
         private readonly webtoonParser: WebtoonParserService,
         private readonly webtoonDatabase: WebtoonDatabaseService,
         private readonly webtoonDownloader: WebtoonDownloaderService,
     ){
-        this.queue = new WebtoonQueue();
+        this.downloadQueue = DownloadQueue.loadQueue();
+        // If there are downloads in queue, start download
+        let downloadInProgress = false;
+        if(this.downloadQueue.getCurrentDownload() || this.downloadQueue.getQueue().length > 0){
+            this.downloadQueue.reset();
+            downloadInProgress = true;
+        }
         this.cachePromise = this.webtoonParser.loadCache();
-        this.cachePromise.then(() => this.cacheLoaded = true);
+        this.cachePromise.then(() => {
+            this.cacheLoaded = true
+            if(downloadInProgress)
+                this.startDownload().then(() => console.log("Download finished."));
+        });
     }
 
     async awaitCache(): Promise<void>{
@@ -38,12 +48,9 @@ export class DownloadManagerService{
         if(!this.cacheLoaded)
             throw new Error("Cache not loaded.");
         const webtoonOverview: CachedWebtoonModel = this.webtoonParser.findWebtoon(webtoonName, language);
-        // If webtoon already in queue, do nothing
-        if(this.queue.getElements().find(w => w.title === webtoonOverview.title))
-            return;
         // If queue is empty, start download
-        this.queue.enqueue(webtoonOverview);
-        if(!this.currentDownload)
+        this.downloadQueue.enqueue(webtoonOverview);
+        if(!this.downloadQueue.getCurrentDownload())
             this.startDownload().then(() => console.log("Download finished."));
     }
 
@@ -52,58 +59,59 @@ export class DownloadManagerService{
             throw new HttpException("Cache not loaded.", HttpStatusCode.TooEarly);
         for(const webtoonLanguageName of await this.webtoonDatabase.getWebtoonList()){
             const webtoonLanguage: CachedWebtoonModel[] = this.webtoonParser.webtoons[webtoonLanguageName.language];
-            this.queue.enqueue(webtoonLanguage.find(w => w.title === webtoonLanguageName.title) as CachedWebtoonModel);
+            this.downloadQueue.enqueue(webtoonLanguage.find(w => w.title === webtoonLanguageName.title) as CachedWebtoonModel);
         }
-        if(!this.currentDownload)
+        if(!this.downloadQueue.getCurrentDownload())
             this.startDownload().then(() => console.log("Download finished."));
     }
 
     private async startDownload(): Promise<void>{
         if(!this.cacheLoaded)
             throw new HttpException("Cache not loaded.", HttpStatusCode.TooEarly);
-        while(!this.queue.isEmpty()){
-            this.currentDownload = this.queue.dequeue();
-            if(!this.currentDownload)
+        while(!this.downloadQueue.isQueueEmpty()){
+            const currentDownload: CachedWebtoonModel = this.downloadQueue.dequeue();
+            if(!currentDownload)
                 return;
-            this.logger.debug(`Downloading ${this.currentDownload.title} (${this.currentDownload.language}).`);
-            if(!await this.webtoonDatabase.isWebtoonSaved(this.currentDownload.title, this.currentDownload.language)){
-                const webtoon: WebtoonModel = await this.webtoonParser.getWebtoonInfos(this.currentDownload);
+            this.logger.debug(`Downloading ${this.downloadQueue.getCurrentDownload().title} (${this.downloadQueue.getCurrentDownload().language}).`);
+            if(!await this.webtoonDatabase.isWebtoonSaved(this.downloadQueue.getCurrentDownload().title, this.downloadQueue.getCurrentDownload().language)){
+                const webtoon: WebtoonModel = await this.webtoonParser.getWebtoonInfos(this.downloadQueue.getCurrentDownload());
                 const webtoonData: WebtoonDataModel = await this.webtoonDownloader.downloadWebtoon(webtoon);
                 await this.webtoonDatabase.saveWebtoon(webtoon, webtoonData);
             }
-            const startEpisode: number = await this.webtoonDatabase.getLastSavedEpisodeNumber(this.currentDownload.title, this.currentDownload.language);
-            const epList: EpisodeModel[] = await this.webtoonParser.getEpisodes(this.currentDownload);
+            const startEpisode: number = await this.webtoonDatabase.getLastSavedEpisodeNumber(this.downloadQueue.getCurrentDownload().title, this.downloadQueue.getCurrentDownload().language);
+            const epList: EpisodeModel[] = await this.webtoonParser.getEpisodes(this.downloadQueue.getCurrentDownload());
             for(let i = startEpisode; i < epList.length; i++){
-                if(!this.currentDownload)
+                if(!this.downloadQueue.getCurrentDownload()) // If current download is cleared, stop downloading
                     break;
-                const epImageLinks: string[] = await this.webtoonParser.getEpisodeLinks(this.currentDownload, epList[i]);
+                const epImageLinks: string[] = await this.webtoonParser.getEpisodeLinks(this.downloadQueue.getCurrentDownload(), epList[i]);
                 const episodeData: EpisodeDataModel = await this.webtoonDownloader.downloadEpisode(epList[i], epImageLinks);
-                if(!this.currentDownload)
+                if(!this.downloadQueue.getCurrentDownload()) // If current download is cleared, stop downloading
                     break;
-                await this.webtoonDatabase.saveEpisode(this.currentDownload, epList[i], episodeData);
+                await this.webtoonDatabase.saveEpisode(this.downloadQueue.getCurrentDownload(), epList[i], episodeData);
             }
         }
-        this.currentDownload = undefined;
+        this.downloadQueue.clear();
     }
 
-    getCurrentDownload(): CachedWebtoonModel | undefined{
-        if(this.currentDownload)
-            return this.currentDownload;
+    getCurrentDownload(): CachedWebtoonModel{
+        if(this.downloadQueue.getCurrentDownload())
+            return this.downloadQueue.getCurrentDownload();
         throw new NotFoundException("No download in progress.");
     }
 
     getDownloadQueue(): CachedWebtoonModel[]{
-        if(!this.currentDownload)
-            throw new NotFoundException("No download in progress.");;
-        return [this.currentDownload, ...this.queue.getElements()];
+        if(!this.downloadQueue.getCurrentDownload() && this.downloadQueue.getQueue().length === 0)
+            throw new NotFoundException("No download in progress.");
+        if(this.downloadQueue.getCurrentDownload())
+            return [this.downloadQueue.getCurrentDownload(), ...this.downloadQueue.getQueue()];
+        return this.downloadQueue.getQueue();
     }
 
     skipCurrentDownload(): void{
-        this.currentDownload = undefined;
+        this.downloadQueue.clearCurrentDownload();
     }
 
     clearDownloadQueue(){
-        this.queue.clear();
-        this.currentDownload = undefined;
+        this.downloadQueue.clear();
     }
 }

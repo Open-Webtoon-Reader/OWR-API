@@ -6,6 +6,7 @@ import {AdminModule} from "./modules/webtoon/admin/admin.module";
 import {ThrottlerGuard, ThrottlerModule} from "@nestjs/throttler";
 import {APP_GUARD} from "@nestjs/core";
 import {MigrationModule} from "./modules/webtoon/migration/migration.module";
+import {ScheduleModule} from "@nestjs/schedule";
 
 @Module({
     imports: [
@@ -14,6 +15,7 @@ import {MigrationModule} from "./modules/webtoon/migration/migration.module";
             ttl: 60000,
             limit: 50,
         }]),
+        ScheduleModule.forRoot(),
         TaskModule,
         WebtoonModule,
         AdminModule,
