@@ -33,7 +33,7 @@
     "class-validator": "^0.14.1",
     "dotenv": "^16.4.5",
     "fastify": "^4.27.0",
-    "jsdom": "^24.0.0",
+    "jsdom": "^24.1.0",
     "jszip": "^3.10.1",
     "prisma": "^5.14.0",
     "reflect-metadata": "^0.2.2",
