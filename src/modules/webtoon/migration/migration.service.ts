@@ -7,6 +7,7 @@ import MigrationInfosResponse from "./models/responses/migration-infos.response"
 import axios from "axios";
 import {PrismaService} from "../../misc/prisma.service";
 import * as fs from "node:fs";
+import * as https from "node:https";
 
 @Injectable()
 export class MigrationService{
@@ -20,7 +21,8 @@ export class MigrationService{
         const response = await axios.get(url + "/api/v1/migration/infos", {
             headers: {
                 "Authorization": "Bearer " + adminKey
-            }
+            },
+            httpsAgent: new https.Agent({rejectUnauthorized: false})
         });
         const migrationInfos: MigrationInfosResponse = response.data;
         // Migrate the data
@@ -63,7 +65,8 @@ export class MigrationService{
                 responseType: "stream",
                 headers: {
                     "Authorization": "Bearer " + adminKey
-                }
+                },
+                httpsAgent: new https.Agent({rejectUnauthorized: false})
             });
 
             return new Promise<Buffer>((resolve, reject) => {
