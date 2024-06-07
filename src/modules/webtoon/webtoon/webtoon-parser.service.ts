@@ -76,8 +76,6 @@ export class WebtoonParserService{
             const stars = a.querySelector("p.grade_area")?.querySelector("em")?.textContent;
             const link = a.href;
             const id = link.split("?title_no=")[1];
-            // const thumbnail = a.querySelector("img")?.src;
-            // console.log("title", title);
             let thumbnail = mobileThumbnails.find(t => t.name === title)?.thumbnail;
             if(!thumbnail)
                 thumbnail = a.querySelector("img")?.src;
