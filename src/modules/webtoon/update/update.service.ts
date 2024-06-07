@@ -45,7 +45,7 @@ export class UpdateService{
             for(const webtoon of dbWebtoons){
                 this.logger.debug(`Updating thumbnail for webtoon ${webtoon.title} (${webtoon.language})`);
                 const cachedWebtoon: CachedWebtoonModel = this.webtoonParser.findWebtoon(webtoon.title, webtoon.language);
-                const thumbnail: Buffer = await this.miscService.convertThumbnail(cachedWebtoon.thumbnail);
+                const thumbnail: Buffer = await this.miscService.convertWebtoonThumbnail(cachedWebtoon.thumbnail);
                 const sum: string = this.webtoonDatabaseService.saveImage(thumbnail);
                 // Check if thumbnail already exists
                 let dbThumbnail = await tx.images.findFirst({

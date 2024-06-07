@@ -51,24 +51,17 @@ export class WebtoonParserService{
 
     private async getWebtoonsFromLanguage(language: string): Promise<CachedWebtoonModel[]>{
         const languageWebtoons: CachedWebtoonModel[] = [];
-
         const promises: Promise<CachedWebtoonModel[]>[] = [];
         for (const genre of Object.values(WebtoonGenres))
             promises.push(this.getWebtoonsFromGenre(language, genre));
         const genreResults = await Promise.all(promises);
         for (const webtoons of genreResults)
             languageWebtoons.push(...webtoons);
-
-        // for (const genre of Object.values(WebtoonGenres))
-        //     languageWebtoons.push(...await this.getWebtoonsFromGenre(language, genre));
-
         return this.removeDuplicateWebtoons(languageWebtoons);
     }
 
     private async getWebtoonsFromGenre(language: string, genre: string): Promise<CachedWebtoonModel[]>{
-        // console.log(language, genre);
         const mobileThumbnails = await this.getWebtoonThumbnailFromGenre(language, genre);
-        // console.log(mobileThumbnails);
         const url = `https://www.webtoons.com/${language}/genres/${genre}`;
         const response = await this.miscService.getAxiosInstance().get(url);
         const document = new JSDOM(response.data).window.document;
@@ -108,7 +101,6 @@ export class WebtoonParserService{
     private async getWebtoonThumbnailFromGenre(language: string, genre: string): Promise<Record<string, string>[]>{
         const mobileThumbnails: Record<string, string>[] = [];
         const mobileUrl = `https://www.webtoons.com/${language}/genres/${genre}`.replace("www.webtoons", "m.webtoons") + "?webtoon-platform-redirect=true";
-        // console.log(mobileUrl);
         const mobileResponse = await this.miscService.getAxiosInstance().get(mobileUrl, {
             headers: {
                 "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148"
@@ -117,7 +109,6 @@ export class WebtoonParserService{
         const mobileDocument = new JSDOM((mobileResponse).data).window.document;
         const className = `genre_${genre.toUpperCase()}_list`;
         const wList = mobileDocument.querySelector(`ul.${className}`)?.querySelectorAll("li");
-        // console.log("wList", wList);
         if(!wList) return [];
         for(const li of wList){
             const webtoonName = li.querySelector("a")?.querySelector("div.info")?.querySelector("p.subj span")?.textContent;

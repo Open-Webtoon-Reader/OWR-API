@@ -97,7 +97,7 @@ export class MiscService{
         return response.data as Buffer;
     }
 
-    async convertThumbnail(url: string){
+    async convertWebtoonThumbnail(url: string){
         const webpImage: Buffer = await this.downloadImage(url);
         return await sharp(webpImage).resize(240, 240, {
             fit: "cover",

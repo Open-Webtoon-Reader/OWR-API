@@ -50,7 +50,7 @@ export class WebtoonDownloaderService{
 
     async downloadWebtoon(webtoon: WebtoonModel): Promise<WebtoonDataModel>{
         const downloadPromises: Promise<Buffer>[] = [];
-        downloadPromises.push(this.miscService.convertThumbnail(webtoon.thumbnail));
+        downloadPromises.push(this.miscService.convertWebtoonThumbnail(webtoon.thumbnail));
         downloadPromises.push(this.miscService.downloadImage(webtoon.banner.background));
         downloadPromises.push(this.miscService.downloadImage(webtoon.banner.top));
         downloadPromises.push(this.miscService.downloadImage(webtoon.banner.mobile));
