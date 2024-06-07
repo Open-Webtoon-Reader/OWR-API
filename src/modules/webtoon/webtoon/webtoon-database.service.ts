@@ -406,4 +406,9 @@ export class WebtoonDatabaseService{
         const folder = imageSum.substring(0, 2);
         return fs.readFileSync(`./images/${folder}/${imageSum}.webp`);
     }
+
+    removeImage(imageSum: string): void{
+        const folder = imageSum.substring(0, 2);
+        fs.rmSync(`./images/${folder}/${imageSum}.webp`);
+    }
 }

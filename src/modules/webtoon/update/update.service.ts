@@ -18,6 +18,8 @@ export class UpdateService{
     ){}
 
     async updateThumbnails(): Promise<void>{
+        this.webtoonParser.clearCache();
+        await this.webtoonParser.loadCache();
         const dbWebtoons: any[] = await this.prismaService.webtoons.findMany({
             select: {
                 id: true,
@@ -57,13 +59,14 @@ export class UpdateService{
         }
 
         // Delete old thumbnails
-        await this.prismaService.images.deleteMany({
-            where: {
-                id: {
-                    in: thumbnailsToDelete
+        for(const thumbnailId of thumbnailsToDelete){
+            const deletedImage = await this.prismaService.images.delete({
+                where: {
+                    id: thumbnailId
                 }
-            }
-        });
+            });
+            this.webtoonDatabaseService.removeImage(deletedImage.sum);
+        }
     }
 
 }
