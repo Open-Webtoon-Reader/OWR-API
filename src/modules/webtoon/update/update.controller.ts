@@ -1,4 +1,4 @@
-import {Controller, Post, UseGuards} from "@nestjs/common";
+import {Controller, Logger, Post, UseGuards} from "@nestjs/common";
 import {UpdateService} from "./update.service";
 import {ApiBearerAuth, ApiTags} from "@nestjs/swagger";
 import {AdminGuard} from "../admin/guard/admin.guard";
@@ -8,6 +8,9 @@ import {AdminGuard} from "../admin/guard/admin.guard";
 @ApiTags("Update")
 @UseGuards(AdminGuard)
 export class UpdateController{
+
+    private readonly logger = new Logger(UpdateController.name);
+
     constructor(
         private readonly updateService: UpdateService,
     ){}
@@ -15,6 +18,6 @@ export class UpdateController{
     @Post("webtoons/thumbnails")
     @ApiBearerAuth()
     async updateThumbnails(): Promise<void>{
-        await this.updateService.updateThumbnails();
+        this.updateService.updateThumbnails().then(() => this.logger.log("Thumbnails updated"));
     }
 }
