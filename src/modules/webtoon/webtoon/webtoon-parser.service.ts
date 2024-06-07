@@ -45,16 +45,24 @@ export class WebtoonParserService{
 
     private async getWebtoonsFromLanguage(language: string): Promise<CachedWebtoonModel[]>{
         const languageWebtoons: CachedWebtoonModel[] = [];
+
         const promises: Promise<CachedWebtoonModel[]>[] = [];
         for (const genre of Object.values(WebtoonGenres))
             promises.push(this.getWebtoonsFromGenre(language, genre));
         const genreResults = await Promise.all(promises);
         for (const webtoons of genreResults)
             languageWebtoons.push(...webtoons);
+
+        // for (const genre of Object.values(WebtoonGenres))
+        //     languageWebtoons.push(...await this.getWebtoonsFromGenre(language, genre));
+
         return this.removeDuplicateWebtoons(languageWebtoons);
     }
 
     private async getWebtoonsFromGenre(language: string, genre: string): Promise<CachedWebtoonModel[]>{
+        // console.log(language, genre);
+        const mobileThumbnails = await this.getWebtoonThumbnailFromGenre(language, genre);
+        // console.log(mobileThumbnails);
         const url = `https://www.webtoons.com/${language}/genres/${genre}`;
         const response = await this.miscService.getAxiosInstance().get(url);
         const document = new JSDOM(response.data).window.document;
@@ -69,7 +77,11 @@ export class WebtoonParserService{
             const stars = a.querySelector("p.grade_area")?.querySelector("em")?.textContent;
             const link = a.href;
             const id = link.split("?title_no=")[1];
-            const thumbnail = a.querySelector("img")?.src;
+            // const thumbnail = a.querySelector("img")?.src;
+            // console.log("title", title);
+            let thumbnail = mobileThumbnails.find(t => t.name === title)?.thumbnail;
+            if(!thumbnail)
+                thumbnail = a.querySelector("img")?.src;
             if(!title || !author || !stars || !link || !thumbnail || !id)
                 throw new NotFoundException(`Missing data for webtoon: ${url}`);
             const webtoon: CachedWebtoonModel = {
@@ -85,6 +97,29 @@ export class WebtoonParserService{
             webtoons.push(webtoon);
         }
         return webtoons;
+    }
+
+    private async getWebtoonThumbnailFromGenre(language: string, genre: string): Promise<Record<string, string>[]>{
+        const mobileThumbnails: Record<string, string>[] = [];
+        const mobileUrl = `https://www.webtoons.com/${language}/genres/${genre}`.replace("www.webtoons", "m.webtoons") + "?webtoon-platform-redirect=true";
+        // console.log(mobileUrl);
+        const mobileResponse = await this.miscService.getAxiosInstance().get(mobileUrl, {
+            headers: {
+                "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148"
+            }
+        });
+        const mobileDocument = new JSDOM((mobileResponse).data).window.document;
+        const className = `genre_${genre.toUpperCase()}_list`;
+        const wList = mobileDocument.querySelector(`ul.${className}`)?.querySelectorAll("li");
+        // console.log("wList", wList);
+        if(!wList) return [];
+        for(const li of wList){
+            const webtoonName = li.querySelector("a")?.querySelector("div.info")?.querySelector("p.subj span")?.textContent;
+            const imgLink = li.querySelector("a")?.querySelector("div.pic")?.querySelector("img")?.src;
+            if(!webtoonName || !imgLink) continue;
+            mobileThumbnails.push({name: webtoonName, thumbnail: imgLink});
+        }
+        return mobileThumbnails;
     }
 
     private removeDuplicateWebtoons(webtoons: CachedWebtoonModel[]){

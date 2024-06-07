@@ -4,6 +4,7 @@ import WebtoonDataModel from "./models/models/webtoon-data.model";
 import WebtoonModel from "./models/models/webtoon.model";
 import {Injectable, Logger} from "@nestjs/common";
 import {MiscService} from "../../misc/misc.service";
+import * as sharp from "sharp";
 
 @Injectable()
 export class WebtoonDownloaderService{
@@ -14,7 +15,7 @@ export class WebtoonDownloaderService{
         private readonly miscService: MiscService,
     ){}
 
-    async downloadEpisode(episode: EpisodeModel, imageUrls: string[]): Promise<EpisodeDataModel> {
+    async downloadEpisode(episode: EpisodeModel, imageUrls: string[]): Promise<EpisodeDataModel>{
         this.logger.debug(`Downloading episode ${episode.number}...`);
         const startTime = Date.now();
         const thumbnail: Buffer = await this.miscService.downloadImage(episode.thumbnail);
@@ -27,7 +28,7 @@ export class WebtoonDownloaderService{
             this.logger.debug(`Downloading ${downloadedCount} of ${imageUrls.length} images (${(imagesPerSecond).toFixed(2)} images/s)...`);
         }, 1000);
 
-        for (let i = 0; i < imageUrls.length; i++) {
+        for (let i = 0; i < imageUrls.length; i++){
             const url = imageUrls[i];
             const image = await this.miscService.downloadImage(url, episode.link);
             conversionPromises.push(this.miscService.convertImageToWebp(image));
@@ -49,7 +50,7 @@ export class WebtoonDownloaderService{
 
     async downloadWebtoon(webtoon: WebtoonModel): Promise<WebtoonDataModel>{
         const downloadPromises: Promise<Buffer>[] = [];
-        downloadPromises.push(this.miscService.downloadImage(webtoon.thumbnail));
+        downloadPromises.push(this.convertThumbnail(webtoon.thumbnail));
         downloadPromises.push(this.miscService.downloadImage(webtoon.banner.background));
         downloadPromises.push(this.miscService.downloadImage(webtoon.banner.top));
         downloadPromises.push(this.miscService.downloadImage(webtoon.banner.mobile));
@@ -64,5 +65,13 @@ export class WebtoonDownloaderService{
             topBanner: top,
             mobileBanner: mobile,
         } as WebtoonDataModel;
+    }
+
+    async convertThumbnail(url: string){
+        const webpImage = await this.miscService.downloadImage(url);
+        return await sharp(webpImage).resize(240, 240, {
+            fit: "cover",
+            position: "center"
+        }).toBuffer();
     }
 }

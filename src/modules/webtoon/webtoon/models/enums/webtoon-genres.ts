@@ -11,7 +11,23 @@ enum WebtoonGenres {
     SF = "sf",
     HORROR = "horror",
     TIPTOON = "tiptoon",
-    LOCAL = "local"
+    LOCAL = "local",
+    SCHOOL = "school",
+    MARTIAL_ARTS = "martial_arts",
+    BL_GL = "bl_gl",
+    ROMANCE_M = "romance_m",
+    TIME_SLIP = "time_slip",
+    CITY_OFFICE = "city_office",
+    MYSTERY = "mystery",
+    HEARTWARMING = "heartwarming",
+    SHONEN = "shonen",
+    EASTERN_PALACE = "eastern_palace",
+    WEB_NOVEL = "web_novel",
+    WESTERN_PALACE = "western_palace",
+    ADAPTATION = "adaptation",
+    SUPERNATURAL = "supernatural",
+    HISTORICAL = "historical",
+    ROMANTIC_FANTASY = "romantic_fantasy",
 }
 
 export default WebtoonGenres;
