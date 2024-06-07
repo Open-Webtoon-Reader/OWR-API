@@ -17,7 +17,7 @@ export class DownloadManagerService{
     private readonly logger = new Logger(DownloadManagerService.name);
 
     private cacheLoaded: boolean = false;
-    private readonly cachePromise: Promise<void>;
+    private cachePromise: Promise<void>;
     private readonly downloadQueue: DownloadQueue;
 
     constructor(
@@ -34,7 +34,7 @@ export class DownloadManagerService{
         }
         this.cachePromise = this.webtoonParser.loadCache();
         this.cachePromise.then(() => {
-            this.cacheLoaded = true
+            this.cacheLoaded = true;
             if(downloadInProgress)
                 this.startDownload().then(() => console.log("Download finished."));
         });
@@ -44,9 +44,20 @@ export class DownloadManagerService{
         return this.cachePromise;
     }
 
+    async refreshCache(): Promise<void>{
+        if(!this.cacheLoaded)
+            throw new HttpException("Cache already loading.", HttpStatusCode.TooEarly);
+        this.cacheLoaded = false;
+        this.webtoonParser.clearCache();
+        this.cachePromise = this.webtoonParser.loadCache();
+        this.cachePromise.then(() => {
+            this.cacheLoaded = true;
+        });
+    }
+
     async addWebtoonToQueue(webtoonName: string, language = "en"): Promise<void>{
         if(!this.cacheLoaded)
-            throw new Error("Cache not loaded.");
+            throw new HttpException("Cache already loading.", HttpStatusCode.TooEarly);
         const webtoonOverview: CachedWebtoonModel = this.webtoonParser.findWebtoon(webtoonName, language);
         // If queue is empty, start download
         this.downloadQueue.enqueue(webtoonOverview);
@@ -69,6 +80,7 @@ export class DownloadManagerService{
         if(!this.cacheLoaded)
             throw new HttpException("Cache not loaded.", HttpStatusCode.TooEarly);
         while(!this.downloadQueue.isQueueEmpty()){
+            await this.cachePromise; // Wait for cache to be loaded if it is cleared
             const currentDownload: CachedWebtoonModel = this.downloadQueue.dequeue();
             if(!currentDownload)
                 return;

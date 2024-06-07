@@ -21,6 +21,12 @@ export class WebtoonParserService{
         private readonly miscService: MiscService
     ){}
 
+    clearCache(): void{
+        if(fs.existsSync("./.cache/webtoons.json"))
+            fs.unlinkSync("./.cache/webtoons.json");
+        this.webtoons = {};
+    }
+
     async loadCache(): Promise<void>{
         // Load existing cache
         if(fs.existsSync("./.cache/webtoons.json")){
