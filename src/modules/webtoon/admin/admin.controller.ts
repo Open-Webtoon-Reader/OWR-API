@@ -63,4 +63,11 @@ export class AdminController{
     async clearQueue(): Promise<void>{
         return this.downloadManagerService.clearDownloadQueue();
     }
+
+    @Post("refresh-cache")
+    @ApiBearerAuth()
+    @ApiResponse({status: HttpStatusCode.Created, description: "Refreshes the cache"})
+    async refreshCache(): Promise<void>{
+        return this.downloadManagerService.refreshCache();
+    }
 }

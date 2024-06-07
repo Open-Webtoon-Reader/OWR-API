@@ -22,7 +22,7 @@ export class MiscService{
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.2210.91",
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 OPR/106.0.0.0",
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 OPR/106.0.0.0",
-    ]
+    ];
 
     constructor(){
         this.axiosInstance = axios.create({});
@@ -95,6 +95,14 @@ export class MiscService{
             }
         });
         return response.data as Buffer;
+    }
+
+    async convertWebtoonThumbnail(url: string){
+        const webpImage: Buffer = await this.downloadImage(url);
+        return await sharp(webpImage).resize(240, 240, {
+            fit: "cover",
+            position: "center"
+        }).toBuffer();
     }
 
     parseWebtoonStars(stars: string): WebtoonStarModel{
