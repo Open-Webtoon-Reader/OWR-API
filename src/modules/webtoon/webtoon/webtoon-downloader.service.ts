@@ -50,7 +50,7 @@ export class WebtoonDownloaderService{
 
     async downloadWebtoon(webtoon: WebtoonModel): Promise<WebtoonDataModel>{
         const downloadPromises: Promise<Buffer>[] = [];
-        downloadPromises.push(this.convertThumbnail(webtoon.thumbnail));
+        downloadPromises.push(this.miscService.convertThumbnail(webtoon.thumbnail));
         downloadPromises.push(this.miscService.downloadImage(webtoon.banner.background));
         downloadPromises.push(this.miscService.downloadImage(webtoon.banner.top));
         downloadPromises.push(this.miscService.downloadImage(webtoon.banner.mobile));
@@ -65,13 +65,5 @@ export class WebtoonDownloaderService{
             topBanner: top,
             mobileBanner: mobile,
         } as WebtoonDataModel;
-    }
-
-    async convertThumbnail(url: string){
-        const webpImage = await this.miscService.downloadImage(url);
-        return await sharp(webpImage).resize(240, 240, {
-            fit: "cover",
-            position: "center"
-        }).toBuffer();
     }
 }

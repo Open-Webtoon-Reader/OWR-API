@@ -97,6 +97,14 @@ export class MiscService{
         return response.data as Buffer;
     }
 
+    async convertThumbnail(url: string){
+        const webpImage: Buffer = await this.downloadImage(url);
+        return await sharp(webpImage).resize(240, 240, {
+            fit: "cover",
+            position: "center"
+        }).toBuffer();
+    }
+
     parseWebtoonStars(stars: string): WebtoonStarModel{
         // TODO: Fix dutch space and comma issue
         stars = stars.replace(" ", " ");
