@@ -7,7 +7,6 @@ import EpisodeDataModel from "./models/models/episode-data.model";
 import {HttpException, Injectable, Logger, NotFoundException} from "@nestjs/common";
 import WebtoonModel from "./models/models/webtoon.model";
 import WebtoonDataModel from "./models/models/webtoon-data.model";
-import WebtoonQueue from "../../../common/utils/models/webtoon-queue";
 import {HttpStatusCode} from "axios";
 import DownloadQueue from "../../../common/utils/models/download-queue";
 
