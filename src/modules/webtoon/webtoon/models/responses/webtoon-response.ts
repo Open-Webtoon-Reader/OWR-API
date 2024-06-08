@@ -15,12 +15,14 @@ export default class WebtoonResponse extends LightWebtoonResponse{
         language: string,
         author: string,
         genres: string[],
+        isNew: boolean,
+        hasNewEpisodes: boolean,
         thumbnail: string,
         backgroundBanner: string,
         topBanner: string,
         mobileBanner: string,
     ){
-        super(id, title, language, author, genres, thumbnail);
+        super(id, title, language, author, genres, isNew, hasNewEpisodes, thumbnail);
         this.backgroundBanner = backgroundBanner;
         this.topBanner = topBanner;
         this.mobileBanner = mobileBanner;

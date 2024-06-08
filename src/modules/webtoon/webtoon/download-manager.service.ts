@@ -96,9 +96,7 @@ export class DownloadManagerService{
                     break;
                 const epImageLinks: string[] = await this.webtoonParser.getEpisodeLinks(this.downloadQueue.getCurrentDownload(), epList[i]);
                 const episodeData: EpisodeDataModel = await this.webtoonDownloader.downloadEpisode(epList[i], epImageLinks);
-                if(!this.downloadQueue.getCurrentDownload()) // If current download is cleared, stop downloading
-                    break;
-                await this.webtoonDatabase.saveEpisode(this.downloadQueue.getCurrentDownload(), epList[i], episodeData);
+                await this.webtoonDatabase.saveEpisode(currentDownload, epList[i], episodeData);
             }
         }
         this.downloadQueue.clear();

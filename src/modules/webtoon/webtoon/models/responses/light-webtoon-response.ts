@@ -12,6 +12,10 @@ export default class LightWebtoonResponse{
     @ApiProperty()
         genres: string[];
     @ApiProperty()
+        isNew: boolean;
+    @ApiProperty()
+        hasNewEpisodes: boolean;
+    @ApiProperty()
         thumbnail: string; // As dataurl
 
     constructor(
@@ -20,6 +24,8 @@ export default class LightWebtoonResponse{
         language: string,
         author: string,
         genres: string[],
+        isNew: boolean,
+        hasNewEpisodes: boolean,
         thumbnail: string,
     ){
         this.id = id;
@@ -27,6 +33,8 @@ export default class LightWebtoonResponse{
         this.language = language;
         this.author = author;
         this.genres = genres;
+        this.isNew = isNew;
+        this.hasNewEpisodes = hasNewEpisodes;
         this.thumbnail = thumbnail;
     }
 }
