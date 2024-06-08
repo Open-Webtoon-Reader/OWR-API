@@ -67,6 +67,8 @@ model Webtoons {
   top_banner           Images          @relation(fields: [top_banner_id], references: [id], name: "top_banner")
   mobile_banner_id     Int             @unique
   mobile_banner        Images          @relation(fields: [mobile_banner_id], references: [id], name: "mobile_banner")
+  created_at           DateTime        @default(now())
+  updated_at           DateTime        @default(now()) @updatedAt
   genres               WebtoonGenres[]
   episodes             Episodes[]
 
@@ -82,6 +84,7 @@ model Episodes {
   webtoon        Webtoons        @relation(fields: [webtoon_id], references: [id], onDelete: Cascade)
   thumbnail_id   Int
   thumbnail      Images          @relation(fields: [thumbnail_id], references: [id])
+  created_at     DateTime        @default(now())
   episode_images EpisodeImages[]
 
   @@unique([webtoon_id, number])

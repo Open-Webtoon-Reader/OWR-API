@@ -99,6 +99,15 @@ export class WebtoonDatabaseService{
                         }
                     });
             }
+            // Change webtoon updated_at
+            await tx.webtoons.update({
+                where: {
+                    id: dbWebtoon.id
+                },
+                data: {
+                    updated_at: new Date()
+                }
+            });
         });
     }
 
