@@ -245,6 +245,7 @@ export class WebtoonDatabaseService{
 
     /**
      * Get webtoons for public use
+     * @deprecated
      */
     async getWebtoons(): Promise<LightWebtoonResponse[]>{
         const webtoons: any[] = await this.prismaService.webtoons.findMany({
@@ -278,6 +279,37 @@ export class WebtoonDatabaseService{
         return response;
     }
 
+    async getRawWebtoons(): Promise<LightWebtoonResponse[]>{
+        const webtoons: any[] = await this.prismaService.webtoons.findMany({
+            orderBy: {
+                title: "asc"
+            },
+            include: {
+                thumbnail: true,
+                genres: {
+                    include: {
+                        genre: true
+                    }
+                }
+            }
+        });
+        const response: LightWebtoonResponse[] = [];
+        for(const webtoon of webtoons){
+            const {isNew, hasNewEpisodes} = this.checkWebtoonNews(webtoon);
+            response.push(new LightWebtoonResponse(
+                webtoon.id,
+                webtoon.title,
+                webtoon.language,
+                webtoon.author,
+                webtoon.genres.map((genre: any) => genre.genre.name),
+                isNew,
+                hasNewEpisodes,
+                webtoon.thumbnail.sum,
+            ));
+        }
+        return response;
+    }
+
     private checkWebtoonNews(webtoon: any){
         // Mark isNew if webtoon is created in the last 7 days
         const isNew: boolean = new Date().getTime() - new Date(webtoon.created_at).getTime() < 7 * 24 * 60 * 60 * 1000;
@@ -290,6 +322,11 @@ export class WebtoonDatabaseService{
         return new Date().getTime() - new Date(episode.created_at).getTime() < 2 * 24 * 60 * 60 * 1000;
     }
 
+    /**
+     * Get a webtoon
+     * @param webtoonId The id of the webtoon
+     * @deprecated
+     */
     async getWebtoon(webtoonId: number){
         const webtoon: any = await this.prismaService.webtoons.findFirst({
             where: {
@@ -329,6 +366,47 @@ export class WebtoonDatabaseService{
         );
     }
 
+    async getRawWebtoon(webtoonId: number){
+        const webtoon: any = await this.prismaService.webtoons.findFirst({
+            where: {
+                id: webtoonId
+            },
+            include: {
+                thumbnail: true,
+                background_banner: true,
+                top_banner: true,
+                mobile_banner: true,
+                genres: {
+                    include: {
+                        genre: true
+                    }
+                }
+            }
+        });
+        if(!webtoon)
+            throw new NotFoundException(`Webtoon with id ${webtoonId} not found in database.`);
+        const {isNew, hasNewEpisodes} = this.checkWebtoonNews(webtoon);
+        return new WebtoonResponse(
+            webtoon.id,
+            webtoon.title,
+            webtoon.language,
+            webtoon.author,
+            webtoon.genres.map((genre: any) => genre.genre.name),
+            isNew,
+            hasNewEpisodes,
+            webtoon.thumbnail.sum,
+            webtoon.background_banner.sum,
+            webtoon.top_banner.sum,
+            webtoon.mobile_banner.sum
+        );
+    }
+
+    /**
+     * Get episodes of a webtoon
+     * @param webtoonId The id of the webtoon
+     * @param chunkNumber The number of the chunk
+     * @deprecated
+     */
     async getEpisodes(webtoonId: number, chunkNumber: number): Promise<EpisodeChunkResponse>{
         const dbWebtoon: any = await this.prismaService.webtoons.findFirst({
             where: {
@@ -363,6 +441,31 @@ export class WebtoonDatabaseService{
         return new EpisodeChunkResponse(episodeLines, chunkNumber, Math.ceil(episodeCount / this.CHUNK_SIZE));
     }
 
+    async getRawEpisodes(webtoonId: number): Promise<EpisodeLineModel[]>{
+        const dbWebtoon: any = await this.prismaService.webtoons.findFirst({
+            where: {
+                id: webtoonId
+            }
+        });
+        if(!dbWebtoon)
+            throw new NotFoundException(`Webtoon with id ${webtoonId} not found in database.`);
+        const episodes: any[] = await this.prismaService.episodes.findMany({
+            where: {
+                webtoon_id: webtoonId
+            },
+            include: {
+                thumbnail: true
+            },
+            orderBy: {
+                number: "desc"
+            },
+        });
+        const episodeLines: EpisodeLineModel[] = [];
+        for(const episode of episodes)
+            episodeLines.push(new EpisodeLineModel(episode.id, episode.title, episode.number, this.checkEpisodeNews(episode), episode.thumbnail.sum));
+        return episodeLines;
+    }
+
     async getEpisodeInfos(episodeId: number): Promise<EpisodeResponse>{
         const episode: any = await this.prismaService.episodes.findFirst({
             where: {
@@ -374,6 +477,12 @@ export class WebtoonDatabaseService{
         return new EpisodeResponse(episode.title);
     }
 
+    /**
+     * Get images of an episode
+     * @param episodeId The id of the episode
+     * @param chunkNumber The number of the chunk
+     * @deprecated
+     */
     async getEpisodeImages(episodeId: number, chunkNumber: number): Promise<ImagesChunkResponse>{
         const episode: any = await this.prismaService.episodes.findFirst({
             where: {
@@ -404,6 +513,31 @@ export class WebtoonDatabaseService{
         for(const image of dbImages)
             images.push(this.miscService.bufferToDataURL(this.loadImage(image.image.sum)));
         return new ImagesChunkResponse(images, chunkNumber, Math.ceil(imagesCount / this.CHUNK_SIZE));
+    }
+
+    async getRawEpisodeImages(episodeId: number): Promise<string[]>{
+        const episode: any = await this.prismaService.episodes.findFirst({
+            where: {
+                id: episodeId
+            }
+        });
+        if(!episode)
+            throw new NotFoundException(`Episode with id ${episodeId} not found in database.`);
+        const dbImages: any[] = await this.prismaService.episodeImages.findMany({
+            where: {
+                episode_id: episodeId
+            },
+            include: {
+                image: true
+            },
+            orderBy: {
+                number: "asc"
+            },
+        });
+        const images: string[] = [];
+        for(const image of dbImages)
+            images.push(image.image.sum);
+        return images;
     }
 
     async getMigrationInfos(): Promise<MigrationInfosResponse>{
