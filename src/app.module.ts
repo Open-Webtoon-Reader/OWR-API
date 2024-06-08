@@ -8,6 +8,7 @@ import {APP_GUARD} from "@nestjs/core";
 import {MigrationModule} from "./modules/webtoon/migration/migration.module";
 import {ScheduleModule} from "@nestjs/schedule";
 import {UpdateModule} from "./modules/webtoon/update/update.module";
+import {ImageModule} from "./modules/webtoon/image/image.module";
 
 @Module({
     imports: [
@@ -22,6 +23,7 @@ import {UpdateModule} from "./modules/webtoon/update/update.module";
         AdminModule,
         MigrationModule,
         UpdateModule,
+        ImageModule,
     ],
     controllers: [],
     providers: [

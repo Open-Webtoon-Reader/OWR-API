@@ -435,7 +435,7 @@ export class WebtoonDatabaseService{
         return imageSum;
     }
 
-    private loadImage(imageSum: string): Buffer{
+    loadImage(imageSum: string): Buffer{
         const folder = imageSum.substring(0, 2);
         return fs.readFileSync(`./images/${folder}/${imageSum}.webp`);
     }
