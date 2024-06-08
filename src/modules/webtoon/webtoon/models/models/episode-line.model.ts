@@ -8,17 +8,21 @@ export default class EpisodeLineModel{
     @ApiProperty()
         number: number;
     @ApiProperty()
+        isNew: boolean;
+    @ApiProperty()
         thumbnail: string;
 
     constructor(
         id: number,
         title: string,
         number: number,
+        isNew: boolean,
         thumbnail: string,
     ){
         this.id = id;
         this.title = title;
         this.number = number;
+        this.isNew = isNew;
         this.thumbnail = thumbnail;
     }
 }

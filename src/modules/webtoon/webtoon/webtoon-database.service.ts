@@ -231,6 +231,9 @@ export class WebtoonDatabaseService{
         return lastEpisode ? lastEpisode.number : 0;
     }
 
+    /**
+     * Get webtoons title and language for internal use
+     */
     async getWebtoonList(): Promise<any[]>{
         return this.prismaService.webtoons.findMany({
             select: {
@@ -240,8 +243,11 @@ export class WebtoonDatabaseService{
         });
     }
 
+    /**
+     * Get webtoons for public use
+     */
     async getWebtoons(): Promise<LightWebtoonResponse[]>{
-        const webtoons: any = await this.prismaService.webtoons.findMany({
+        const webtoons: any[] = await this.prismaService.webtoons.findMany({
             orderBy: {
                 title: "asc"
             },
@@ -257,16 +263,31 @@ export class WebtoonDatabaseService{
         const response: LightWebtoonResponse[] = [];
         for(const webtoon of webtoons){
             const thumbnail: string = this.miscService.bufferToDataURL(this.loadImage(webtoon.thumbnail.sum));
+            const {isNew, hasNewEpisodes} = this.checkWebtoonNews(webtoon);
             response.push(new LightWebtoonResponse(
                 webtoon.id,
                 webtoon.title,
                 webtoon.language,
                 webtoon.author,
                 webtoon.genres.map((genre: any) => genre.genre.name),
-                thumbnail
+                isNew,
+                hasNewEpisodes,
+                thumbnail,
             ));
         }
         return response;
+    }
+
+    private checkWebtoonNews(webtoon: any){
+        // Mark isNew if webtoon is created in the last 7 days
+        const isNew: boolean = new Date().getTime() - new Date(webtoon.created_at).getTime() < 7 * 24 * 60 * 60 * 1000;
+        // Mark hasNewEpisodes if webtoon is updated in the last 1 day
+        const hasNewEpisodes: boolean = new Date().getTime() - new Date(webtoon.updated_at).getTime() < 2 * 24 * 60 * 60 * 1000;
+        return {isNew, hasNewEpisodes};
+    }
+
+    private checkEpisodeNews(episode: any){
+        return new Date().getTime() - new Date(episode.created_at).getTime() < 2 * 24 * 60 * 60 * 1000;
     }
 
     async getWebtoon(webtoonId: number){
@@ -292,12 +313,15 @@ export class WebtoonDatabaseService{
         const backgroundBanner: string = this.miscService.bufferToDataURL(this.loadImage(webtoon.background_banner.sum));
         const topBanner: string = this.miscService.bufferToDataURL(this.loadImage(webtoon.top_banner.sum));
         const mobileBanner: string = this.miscService.bufferToDataURL(this.loadImage(webtoon.mobile_banner.sum));
+        const {isNew, hasNewEpisodes} = this.checkWebtoonNews(webtoon);
         return new WebtoonResponse(
             webtoon.id,
             webtoon.title,
             webtoon.language,
             webtoon.author,
             webtoon.genres.map((genre: any) => genre.genre.name),
+            isNew,
+            hasNewEpisodes,
             thumbnail,
             backgroundBanner,
             topBanner,
@@ -334,7 +358,7 @@ export class WebtoonDatabaseService{
         const episodeLines: EpisodeLineModel[] = [];
         for(const episode of episodes){
             const thumbnail: string = this.miscService.bufferToDataURL(this.loadImage(episode.thumbnail.sum));
-            episodeLines.push(new EpisodeLineModel(episode.id, episode.title, episode.number, thumbnail));
+            episodeLines.push(new EpisodeLineModel(episode.id, episode.title, episode.number, this.checkEpisodeNews(episode), thumbnail));
         }
         return new EpisodeChunkResponse(episodeLines, chunkNumber, Math.ceil(episodeCount / this.CHUNK_SIZE));
     }
