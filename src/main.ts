@@ -7,6 +7,7 @@ import * as process from "process";
 import * as dotenv from "dotenv";
 import * as fs from "fs";
 import * as os from "os";
+import * as fastifyHelmet from "@fastify/helmet";
 import {SwaggerTheme, SwaggerThemeNameEnum} from "swagger-themes";
 import {LoggerMiddleware} from "./common/middlewares/logger.middleware";
 import {Logger} from "@nestjs/common";
@@ -81,6 +82,10 @@ async function loadServer(server: NestFastifyApplication<RawServerDefault>, serv
 
     // Middlewares
     server.use(new LoggerMiddleware().use);
+    // Si vous n'avez pas l'intention d'utiliser CSP, vous pouvez utiliser ceci :
+    await server.register(fastifyHelmet, {
+        contentSecurityPolicy: false,
+    });
 
     // Swagger
     const config = new DocumentBuilder()
