@@ -82,9 +82,11 @@ async function loadServer(server: NestFastifyApplication<RawServerDefault>, serv
 
     // Middlewares
     server.use(new LoggerMiddleware().use);
-    // Si vous n'avez pas l'intention d'utiliser CSP, vous pouvez utiliser ceci :
     await server.register(fastifyHelmet, {
         contentSecurityPolicy: false,
+        crossOriginEmbedderPolicy: false,
+        crossOriginOpenerPolicy: false,
+        crossOriginResourcePolicy: false,
     });
 
     // Swagger
