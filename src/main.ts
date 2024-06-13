@@ -63,10 +63,11 @@ async function startHttpServer(){
 
 async function startHttpsServer(){
     const httpsOptions = {
+        allowHTTP1: true,
         key: fs.readFileSync(process.env.SSL_KEY_FILE),
         cert: fs.readFileSync(process.env.SSL_CERT_FILE),
     };
-    const httpsApp = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter({https: httpsOptions}));
+    const httpsApp = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter({http2: true, https: httpsOptions}));
     await loadServer(httpsApp, getServerAddress(process.env.BIND_ADDRESS, process.env.HTTP_PORT, "https"));
     await httpsApp.listen(process.env.HTTPS_PORT, process.env.BIND_ADDRESS);
     logServerStart(process.env.BIND_ADDRESS, process.env.HTTPS_PORT, "https");
