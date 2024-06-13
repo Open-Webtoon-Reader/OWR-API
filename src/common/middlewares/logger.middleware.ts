@@ -11,15 +11,19 @@ export class LoggerMiddleware implements NestMiddleware{
         res.on("finish", () => {
             const path = req.url;
             try{
-                const httpOrHttps = req.connection.localPort.toString() === process.env.HTTPS_PORT ? "HTTPS" : "HTTP";
+                let httpOrHttps;
+                if(!req.connection.localPort)
+                    httpOrHttps = "H2";
+                else
+                    httpOrHttps = req.connection.localPort.toString() === process.env.HTTPS_PORT ? "HTTPS" : "HTTP";
                 const method = req.method;
                 if(method === "OPTIONS")
                     return;
                 const statusCode = res.statusCode;
                 const duration = Date.now() - startTime;
-                // const resSize = res.getHeader("Content-Length") || "N/A";
-                const nRes = res as any;
-                const resSize = nRes._contentLength || "0";
+                const resSize: any = res.getHeader("Content-Length") || "0";
+                // const nRes = res as any;
+                // const resSize = nRes._contentLength || "0";
                 const intResSize = parseInt(resSize);
                 LoggerMiddleware.logger.log(`${httpOrHttps} ${method} ${path} ${statusCode} ${duration}ms ${intResSize}`);
                 LoggerMiddleware.requestTimeLogger(path, method, duration);
