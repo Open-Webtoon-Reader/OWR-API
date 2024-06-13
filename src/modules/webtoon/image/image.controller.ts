@@ -1,4 +1,4 @@
-import {BadRequestException, Controller, Get, Header, Param} from "@nestjs/common";
+import {BadRequestException, Controller, Get, Header, Param, Req, Res} from "@nestjs/common";
 import {ApiResponse, ApiTags} from "@nestjs/swagger";
 import {WebtoonDatabaseService} from "../webtoon/webtoon-database.service";
 import {HttpStatusCode} from "axios";
@@ -16,6 +16,7 @@ export class ImageController{
 
     @Get(":sum")
     @Header("Content-Type", "image/webp")
+    @Header("Cache-Control", "public, max-age=31536000")
     @ApiResponse({status: HttpStatusCode.Ok, description: "Get image"})
     @ApiResponse({status: HttpStatusCode.NotFound, description: "Not found"})
     @ApiResponse({status: HttpStatusCode.BadRequest, description: "Invalid sha256 sum"})
