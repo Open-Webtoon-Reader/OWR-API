@@ -24,7 +24,7 @@ export class LoggerMiddleware implements NestMiddleware{
                 LoggerMiddleware.logger.log(`${httpOrHttps} ${method} ${path} ${statusCode} ${duration}ms ${intResSize}`);
                 LoggerMiddleware.requestTimeLogger(path, method, duration);
             }catch(e){
-                LoggerMiddleware.logger.warn(`Can't log route ${path}`);
+                LoggerMiddleware.logger.warn(`Can't log route ${path} : ${e}`);
             }
         });
         next();
