@@ -579,17 +579,17 @@ export class WebtoonDatabaseService{
         fs.rmSync(`./images/${folder}/${imageSum}.webp`);
     }
 
-    async getRandomThumbnails() {
+    async getRandomThumbnails(){
         const webtoons: any[] = await this.prismaService.webtoons.findMany({
             include: {
                 thumbnail: true
             }
         });
         if(!webtoons.length)
-            throw new NotFoundException(`No thumbnails found in database.`);
+            throw new NotFoundException("No thumbnails found in database.");
         const randomWebtoon: any = webtoons[Math.floor(Math.random() * webtoons.length)];
         return {
             thumbnail: randomWebtoon.thumbnail.sum
-        }
+        };
     }
 }

@@ -4,7 +4,6 @@ import WebtoonDataModel from "./models/models/webtoon-data.model";
 import WebtoonModel from "./models/models/webtoon.model";
 import {Injectable, Logger} from "@nestjs/common";
 import {MiscService} from "../../misc/misc.service";
-import * as sharp from "sharp";
 
 @Injectable()
 export class WebtoonDownloaderService{

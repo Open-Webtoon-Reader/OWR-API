@@ -1,4 +1,4 @@
-import {BadRequestException, Controller, Get, Header, Param, Req, Res} from "@nestjs/common";
+import {BadRequestException, Controller, Get, Header, Param} from "@nestjs/common";
 import {ApiResponse, ApiTags} from "@nestjs/swagger";
 import {WebtoonDatabaseService} from "../webtoon/webtoon-database.service";
 import {HttpStatusCode} from "axios";

@@ -12,6 +12,7 @@ import {ChunkNumberDto} from "../../../common/models/dto/chunk-number.dto";
 import ImagesChunkResponse from "./models/responses/images-chunk.response";
 import EpisodeLineModel from "./models/models/episode-line.model";
 import {HttpStatusCode} from "axios";
+import RandomThumbnailResponse from "./models/responses/random-thumbnail.response";
 
 @Controller("webtoons")
 @ApiTags("Webtoon")
@@ -85,9 +86,9 @@ export class WebtoonController{
     }
 
     @Get("thumbnails/random")
-    @ApiResponse({status: HttpStatusCode.Ok, description: "Returns a list of random thumbnails"})
+    @ApiResponse({status: HttpStatusCode.Ok, description: "Returns a random webtoon thumbnail sum", type: RandomThumbnailResponse})
     @ApiResponse({status: HttpStatusCode.NotFound, description: "No thumbnails found"})
-    async getRandomThumbnails(): Promise<any>{
+    async getRandomThumbnails(): Promise<RandomThumbnailResponse>{
         return this.webtoonDatabaseService.getRandomThumbnails();
     }
 }
