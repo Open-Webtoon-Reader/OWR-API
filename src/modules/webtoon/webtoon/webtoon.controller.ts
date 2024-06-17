@@ -83,4 +83,11 @@ export class WebtoonController{
     async getEpisodeImagesNew(@Param() episodeIdDto: EpisodeIdDto): Promise<string[]>{
         return this.webtoonDatabaseService.getRawEpisodeImages(episodeIdDto.episodeId);
     }
+
+    @Get("thumbnails/random")
+    @ApiResponse({status: HttpStatusCode.Ok, description: "Returns a list of random thumbnails"})
+    @ApiResponse({status: HttpStatusCode.NotFound, description: "No thumbnails found"})
+    async getRandomThumbnails(): Promise<any>{
+        return this.webtoonDatabaseService.getRandomThumbnails();
+    }
 }
