@@ -23,21 +23,21 @@ export class WebtoonController{
     @Get()
     @ApiResponse({status: HttpStatusCode.Ok, description: "Returns a list of webtoons", type: LightWebtoonResponse, isArray: true})
     async getRawWebtoonList(): Promise<LightWebtoonResponse[]>{
-        return this.webtoonDatabaseService.getRawWebtoons();
+        return this.webtoonDatabaseService.getWebtoons();
     }
 
     @Get(":webtoonId")
     @ApiResponse({status: HttpStatusCode.Ok, description: "Returns a webtoon", type: WebtoonResponse})
     @ApiResponse({status: HttpStatusCode.NotFound, description: "Webtoon not found"})
     async getRawWebtoon(@Param() webtoonIdDto: WebtoonIdDto){
-        return this.webtoonDatabaseService.getRawWebtoon(webtoonIdDto.webtoonId);
+        return this.webtoonDatabaseService.getWebtoon(webtoonIdDto.webtoonId);
     }
 
     @Get(":webtoonId/episodes")
     @ApiResponse({status: HttpStatusCode.Ok, description: "Returns a list of episodes for a webtoon", type: EpisodeLineModel, isArray: true})
     @ApiResponse({status: HttpStatusCode.NotFound, description: "Webtoon not found"})
     async getWebtoonEpisodesNew(@Param() webtoonIdDto: WebtoonIdDto): Promise<EpisodeLineModel[]>{
-        return this.webtoonDatabaseService.getRawEpisodes(webtoonIdDto.webtoonId);
+        return this.webtoonDatabaseService.getEpisodes(webtoonIdDto.webtoonId);
     }
 
     @Get("episodes/:episodeId")
@@ -49,7 +49,7 @@ export class WebtoonController{
     @Get("episodes/:episodeId/images")
     @ApiResponse({status: 200, description: "Returns a list of images for an episode", type: String, isArray: true})
     async getEpisodeImagesNew(@Param() episodeIdDto: EpisodeIdDto): Promise<string[]>{
-        return this.webtoonDatabaseService.getRawEpisodeImages(episodeIdDto.episodeId);
+        return this.webtoonDatabaseService.getEpisodeImages(episodeIdDto.episodeId);
     }
 
     @Get("thumbnails/random")

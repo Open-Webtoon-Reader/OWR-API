@@ -241,7 +241,7 @@ export class WebtoonDatabaseService{
         });
     }
 
-    async getRawWebtoons(): Promise<LightWebtoonResponse[]>{
+    async getWebtoons(): Promise<LightWebtoonResponse[]>{
         const webtoons: any[] = await this.prismaService.webtoons.findMany({
             orderBy: {
                 title: "asc"
@@ -284,7 +284,7 @@ export class WebtoonDatabaseService{
         return new Date().getTime() - new Date(episode.created_at).getTime() < 2 * 24 * 60 * 60 * 1000;
     }
 
-    async getRawWebtoon(webtoonId: number){
+    async getWebtoon(webtoonId: number){
         const webtoon: any = await this.prismaService.webtoons.findFirst({
             where: {
                 id: webtoonId
@@ -319,7 +319,7 @@ export class WebtoonDatabaseService{
         );
     }
 
-    async getRawEpisodes(webtoonId: number): Promise<EpisodeLineModel[]>{
+    async getEpisodes(webtoonId: number): Promise<EpisodeLineModel[]>{
         const dbWebtoon: any = await this.prismaService.webtoons.findFirst({
             where: {
                 id: webtoonId
@@ -355,7 +355,7 @@ export class WebtoonDatabaseService{
         return new EpisodeResponse(episode.title);
     }
 
-    async getRawEpisodeImages(episodeId: number): Promise<string[]>{
+    async getEpisodeImages(episodeId: number): Promise<string[]>{
         const episode: any = await this.prismaService.episodes.findFirst({
             where: {
                 id: episodeId
