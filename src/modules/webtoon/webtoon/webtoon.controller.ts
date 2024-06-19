@@ -1,4 +1,4 @@
-import {Controller, Get, Param, Query} from "@nestjs/common";
+import {Controller, Get, Param} from "@nestjs/common";
 import {ApiResponse, ApiTags} from "@nestjs/swagger";
 import {WebtoonDatabaseService} from "./webtoon-database.service";
 import {WebtoonIdDto} from "./models/dto/webtoon-id.dto";
@@ -7,9 +7,6 @@ import EpisodeResponse from "./models/responses/episode.response";
 import LightWebtoonResponse from "./models/responses/light-webtoon-response";
 import {Throttle} from "@nestjs/throttler";
 import WebtoonResponse from "./models/responses/webtoon-response";
-import EpisodeChunkResponse from "./models/responses/episode-chunk.response";
-import {ChunkNumberDto} from "../../../common/models/dto/chunk-number.dto";
-import ImagesChunkResponse from "./models/responses/images-chunk.response";
 import EpisodeLineModel from "./models/models/episode-line.model";
 import {HttpStatusCode} from "axios";
 import RandomThumbnailResponse from "./models/responses/random-thumbnail.response";
@@ -25,44 +22,22 @@ export class WebtoonController{
 
     @Get()
     @ApiResponse({status: HttpStatusCode.Ok, description: "Returns a list of webtoons", type: LightWebtoonResponse, isArray: true})
-    async getWebtoonList(): Promise<LightWebtoonResponse[]>{
-        return this.webtoonDatabaseService.getWebtoons();
-    }
-
-    @Get("raw")
-    @ApiResponse({status: HttpStatusCode.Ok, description: "Returns a list of webtoons", type: LightWebtoonResponse, isArray: true})
     async getRawWebtoonList(): Promise<LightWebtoonResponse[]>{
-        return this.webtoonDatabaseService.getRawWebtoons();
+        return this.webtoonDatabaseService.getWebtoons();
     }
 
     @Get(":webtoonId")
     @ApiResponse({status: HttpStatusCode.Ok, description: "Returns a webtoon", type: WebtoonResponse})
     @ApiResponse({status: HttpStatusCode.NotFound, description: "Webtoon not found"})
-    async getWebtoon(@Param() webtoonIdDto: WebtoonIdDto){
+    async getRawWebtoon(@Param() webtoonIdDto: WebtoonIdDto){
         return this.webtoonDatabaseService.getWebtoon(webtoonIdDto.webtoonId);
     }
 
-    @Get(":webtoonId/raw")
-    @ApiResponse({status: HttpStatusCode.Ok, description: "Returns a webtoon", type: WebtoonResponse})
-    @ApiResponse({status: HttpStatusCode.NotFound, description: "Webtoon not found"})
-    async getRawWebtoon(@Param() webtoonIdDto: WebtoonIdDto){
-        return this.webtoonDatabaseService.getRawWebtoon(webtoonIdDto.webtoonId);
-    }
-
     @Get(":webtoonId/episodes")
-    @Throttle({default: {limit: 150, ttl: 60000}})
-    @ApiResponse({status: HttpStatusCode.Ok, description: "Returns a list of episodes for a webtoon", type: EpisodeChunkResponse})
-    @ApiResponse({status: HttpStatusCode.NotFound, description: "Webtoon not found"})
-    async getWebtoonEpisodes(@Param() webtoonIdDto: WebtoonIdDto, @Query() chunkNumberDto: ChunkNumberDto): Promise<EpisodeChunkResponse>{
-        const chunk = chunkNumberDto.chunk ?? 1;
-        return this.webtoonDatabaseService.getEpisodes(webtoonIdDto.webtoonId, chunk);
-    }
-
-    @Get(":webtoonId/episodes/raw")
     @ApiResponse({status: HttpStatusCode.Ok, description: "Returns a list of episodes for a webtoon", type: EpisodeLineModel, isArray: true})
     @ApiResponse({status: HttpStatusCode.NotFound, description: "Webtoon not found"})
     async getWebtoonEpisodesNew(@Param() webtoonIdDto: WebtoonIdDto): Promise<EpisodeLineModel[]>{
-        return this.webtoonDatabaseService.getRawEpisodes(webtoonIdDto.webtoonId);
+        return this.webtoonDatabaseService.getEpisodes(webtoonIdDto.webtoonId);
     }
 
     @Get("episodes/:episodeId")
@@ -72,17 +47,9 @@ export class WebtoonController{
     }
 
     @Get("episodes/:episodeId/images")
-    @Throttle({default: {limit: 150, ttl: 60000}})
-    @ApiResponse({status: HttpStatusCode.Ok, description: "Returns a list of images for an episode", type: ImagesChunkResponse})
-    async getEpisodeImages(@Param() episodeIdDto: EpisodeIdDto, @Query() chunkNumberDto: ChunkNumberDto): Promise<ImagesChunkResponse>{
-        const chunk = chunkNumberDto.chunk ?? 1;
-        return this.webtoonDatabaseService.getEpisodeImages(episodeIdDto.episodeId, chunk);
-    }
-
-    @Get("episodes/:episodeId/images/raw")
     @ApiResponse({status: 200, description: "Returns a list of images for an episode", type: String, isArray: true})
     async getEpisodeImagesNew(@Param() episodeIdDto: EpisodeIdDto): Promise<string[]>{
-        return this.webtoonDatabaseService.getRawEpisodeImages(episodeIdDto.episodeId);
+        return this.webtoonDatabaseService.getEpisodeImages(episodeIdDto.episodeId);
     }
 
     @Get("thumbnails/random")

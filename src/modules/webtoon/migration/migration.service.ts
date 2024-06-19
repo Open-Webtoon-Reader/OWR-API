@@ -1,4 +1,4 @@
-import {Injectable} from "@nestjs/common";
+import {Injectable, Logger} from "@nestjs/common";
 import {createReadStream, ReadStream} from "fs";
 import {WebtoonDatabaseService} from "../webtoon/webtoon-database.service";
 import * as JSZip from "jszip";
@@ -11,12 +11,16 @@ import * as https from "node:https";
 
 @Injectable()
 export class MigrationService{
+
+    private readonly logger = new Logger(MigrationService.name);
+
     constructor(
         private readonly webtoonDatabaseService: WebtoonDatabaseService,
         private readonly prismaService: PrismaService
     ){}
 
     async migrateFrom(url: string, adminKey: string){
+        this.logger.debug(`Start migration from ${url}`)
         // Get migration infos using axios from the url
         const response = await axios.get(url + "/api/v1/migration/infos", {
             headers: {
@@ -27,19 +31,25 @@ export class MigrationService{
         const migrationInfos: MigrationInfosResponse = response.data;
         // Migrate the data
         for(let i = 1; i <= migrationInfos.chunkNumber; i++){
+            this.logger.debug(`Downloading images from chunk ${i}/${migrationInfos.chunkNumber}`);
             const imageZipBuffer: Buffer = await this.downloadFile(`${url}/api/v1/migration/images?chunk=${i}`, adminKey);
             const imageZip: JSZip = await JSZip.loadAsync(imageZipBuffer);
             const images: Record<string, Buffer> = {};
+            this.logger.debug(`Unzipping images from chunk ${i}/${migrationInfos.chunkNumber}`);
             for(const [fileName, file] of Object.entries(imageZip.files))
                 images[fileName] = await file.async("nodebuffer");
+            this.logger.debug(`Saving images from chunk ${i}/${migrationInfos.chunkNumber}`);
             for(const buffer of Object.values(images))
                 this.webtoonDatabaseService.saveImage(buffer);
+            this.logger.debug(`Chunk ${i}/${migrationInfos.chunkNumber} migrated!`);
         }
         // Database migration
+        this.logger.debug("Migrating database");
         await this.prismaService.onModuleDestroy();
         const databaseBuffer: Buffer = await this.downloadFile(`${url}/api/v1/migration/database`, adminKey);
         fs.writeFileSync("./prisma/database.db", databaseBuffer);
         await this.prismaService.onModuleInit();
+        this.logger.debug("Database migrated!");
     }
 
     async getMigrationInfos(): Promise<MigrationInfosResponse>{
