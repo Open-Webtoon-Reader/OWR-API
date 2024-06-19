@@ -352,7 +352,27 @@ export class WebtoonDatabaseService{
         });
         if(!episode)
             throw new NotFoundException(`Episode with id ${episodeId} not found in database.`);
-        return new EpisodeResponse(episode.title);
+        let previousEpisodeId: number;
+        let nextEpisodeId: number;
+        if(episode.number > 1){
+            const previousEpisode = await this.prismaService.episodes.findFirst({
+                where: {
+                    webtoon_id: episode.webtoon_id,
+                    number: episode.number - 1
+                }
+            });
+            if(previousEpisode)
+                previousEpisodeId = previousEpisode.id;
+        }
+        const nextEpisode = await this.prismaService.episodes.findFirst({
+            where: {
+                webtoon_id: episode.webtoon_id,
+                number: episode.number + 1
+            }
+        });
+        if(nextEpisode)
+            nextEpisodeId = nextEpisode.id;
+        return new EpisodeResponse(episode.title, previousEpisodeId, nextEpisodeId);
     }
 
     async getEpisodeImages(episodeId: number): Promise<string[]>{
