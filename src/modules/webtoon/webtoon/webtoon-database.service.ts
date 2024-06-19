@@ -18,7 +18,7 @@ import MigrationInfosResponse from "../migration/models/responses/migration-info
 export class WebtoonDatabaseService{
 
     private readonly CHUNK_SIZE: number = 10;
-    private readonly MIGRATION_CHUNK_SIZE: number = 10000;
+    private readonly MIGRATION_CHUNK_SIZE: number = 15000;
 
     private readonly logger = new Logger(WebtoonDatabaseService.name);
 
