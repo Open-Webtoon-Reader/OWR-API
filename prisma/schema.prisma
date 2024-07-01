@@ -14,19 +14,19 @@ datasource db {
 }
 
 model Users {
-  id           Int         @id @default(autoincrement())
-  email        String      @unique
-  username     String
-  password     String
-  avatar_id    Int
-  avatar       Images      @relation(fields: [avatar_id], references: [id])
-  user_type_id Int
-  user_types   UserTypes   @relation(fields: [user_type_id], references: [id])
-  created_at   DateTime    @default(now())
-  updated_at   DateTime    @default(now()) @updatedAt
-  sessions     Sessions[]
-  favorites    Favorites[]
-  progress     Progress[]
+  id         Int         @id @default(autoincrement())
+  email      String      @unique
+  username   String
+  password   String
+  avatar_id  Int?
+  avatar     Images?     @relation(fields: [avatar_id], references: [id])
+  type_id    Int
+  type       UserTypes   @relation(fields: [type_id], references: [id])
+  created_at DateTime    @default(now())
+  updated_at DateTime    @default(now()) @updatedAt
+  sessions   Sessions[]
+  favorites  Favorites[]
+  progress   Progress[]
 
   @@map("users")
 }

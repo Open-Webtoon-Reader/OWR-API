@@ -4,12 +4,12 @@ CREATE TABLE "users" (
     "email" TEXT NOT NULL,
     "username" TEXT NOT NULL,
     "password" TEXT NOT NULL,
-    "avatar_id" INTEGER NOT NULL,
-    "user_type_id" INTEGER NOT NULL,
+    "avatar_id" INTEGER,
+    "type_id" INTEGER NOT NULL,
     "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "users_avatar_id_fkey" FOREIGN KEY ("avatar_id") REFERENCES "images" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT "users_user_type_id_fkey" FOREIGN KEY ("user_type_id") REFERENCES "user_types" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    CONSTRAINT "users_avatar_id_fkey" FOREIGN KEY ("avatar_id") REFERENCES "images" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT "users_type_id_fkey" FOREIGN KEY ("type_id") REFERENCES "user_types" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
 -- CreateTable
