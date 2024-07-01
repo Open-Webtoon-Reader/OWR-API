@@ -9,4 +9,13 @@ export class UserService{
         private readonly prismaService: PrismaService,
     ){}
 
+    async getMe(): Promise<any>{
+        const user = await this.prismaService.users.findUnique({
+            where: {
+                id: 1,
+            },
+        });
+        delete user.password;
+        return user;
+    }
 }
