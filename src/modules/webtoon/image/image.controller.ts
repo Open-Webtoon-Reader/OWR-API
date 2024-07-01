@@ -16,7 +16,7 @@ export class ImageController{
 
     @Get(":sum")
     @Header("Content-Type", "image/webp")
-    @Header("Cache-Control", "public, max-age=43200")
+    @Header("Cache-Control", "public, max-age=2592000")
     @ApiResponse({status: HttpStatusCode.Ok, description: "Get image"})
     @ApiResponse({status: HttpStatusCode.NotFound, description: "Not found"})
     @ApiResponse({status: HttpStatusCode.BadRequest, description: "Invalid sha256 sum"})
