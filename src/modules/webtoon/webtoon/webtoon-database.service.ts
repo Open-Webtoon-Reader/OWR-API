@@ -68,35 +68,53 @@ export class WebtoonDatabaseService{
                     thumbnail_id: dbThumbnail.id
                 }
             });
-            for(let i = 0; i < episodeData.images.length; i++){
-                const imageSum: string = this.saveImage(episodeData.images[i]);
-                let dbImage = await tx.images.findUnique({
-                    where: {
-                        sum: imageSum
+
+            // Save images
+            const imagesSum: string[] = episodeData.images.map((image: Buffer) => this.saveImage(image));
+            let dbImages: any[] = await tx.images.findMany({
+                where: {
+                    sum: {
+                        in: imagesSum
                     }
-                });
-                if(!dbImage)
-                    dbImage = await tx.images.create({
-                        data: {
-                            sum: imageSum,
-                            type_id: imageType.id,
-                            episode_images: {
-                                create: {
-                                    number: i,
-                                    episode_id: dbEpisode.id
-                                }
-                            }
-                        }
-                    });
-                else
-                    await tx.episodeImages.create({
-                        data: {
-                            number: i,
-                            episode_id: dbEpisode.id,
-                            image_id: dbImage.id
-                        }
+                }
+            });
+            const imagesToSave: any[] = [];
+            for(let i: number = 0; i < episodeData.images.length; i++){
+                if(!dbImages.find((dbImage: any) => dbImage.sum === this.miscService.getSum(episodeData.images[i])))
+                    imagesToSave.push({
+                        sum: this.miscService.getSum(episodeData.images[i]),
+                        type_id: imageType.id,
                     });
             }
+            await tx.images.createMany({
+                data: imagesToSave
+            });
+            dbImages = await tx.images.findMany({
+                where: {
+                    sum: {
+                        in: imagesSum
+                    }
+                }
+            });
+            // Re-order dbImages to match imagesSum order
+            dbImages.sort((a: any, b: any) => {
+                return imagesSum.indexOf(a.sum) - imagesSum.indexOf(b.sum);
+            });
+
+            // Create episodeImages
+            await tx.episodeImages.createMany({
+                data: dbImages.map((dbImage: any, index: number) => {
+                    return {
+                        number: index,
+                        episode_id: dbEpisode.id,
+                        image_id: dbImage.id
+                    };
+                })
+            });
+
+
+
+
             // Change webtoon updated_at
             await tx.webtoons.update({
                 where: {
