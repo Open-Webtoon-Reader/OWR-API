@@ -2,18 +2,36 @@ import {PrismaClient} from "@prisma/client";
 import * as dotenv from "dotenv";
 import WebtoonGenres from "./../src/modules/webtoon/webtoon/models/enums/webtoon-genres";
 import ImageTypes from "./../src/modules/webtoon/webtoon/models/enums/image-types";
+import UserTypes from "../src/modules/user/models/enums/user-types";
+import {CipherService} from "../src/modules/misc/cipher.service";
 
 dotenv.config();
 
 // initialize Prisma Client
 const prisma = new PrismaClient();
+const cipherService = new CipherService();
 
 async function main(){
-    const webtoon_genres_values = Object.values(WebtoonGenres).map(value => ({name: value}));
-    await seed(prisma.genres, webtoon_genres_values);
+    const webtoonGenresValues = Object.values(WebtoonGenres).map(value => ({name: value}));
+    await seed(prisma.genres, webtoonGenresValues);
 
-    const image_types_values = Object.values(ImageTypes).map(value => ({name: value}));
-    await seed(prisma.imageTypes, image_types_values);
+    const imageTypesValues = Object.values(ImageTypes).map(value => ({name: value}));
+    await seed(prisma.imageTypes, imageTypesValues);
+
+    const userTypesValues = Object.values(UserTypes).map(value => ({name: value}));
+    await seed(prisma.userTypes, userTypesValues);
+
+    await prisma.users.upsert({
+        where: {id: 1},
+        update: {},
+        create: {
+            id: 1,
+            email: "root@example.org",
+            password: await cipherService.hash("root"),
+            username: "root",
+            type_id: 1,
+        },
+    });
 }
 
 async function seed(table: any, data: any[]){
