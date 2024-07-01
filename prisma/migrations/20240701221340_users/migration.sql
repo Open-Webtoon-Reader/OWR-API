@@ -22,6 +22,7 @@ CREATE TABLE "user_types" (
 CREATE TABLE "sessions" (
     "uuid" TEXT NOT NULL PRIMARY KEY,
     "user_id" INTEGER NOT NULL,
+    "user_agent_sum" TEXT NOT NULL,
     "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "sessions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );

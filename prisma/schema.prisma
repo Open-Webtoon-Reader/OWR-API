@@ -40,10 +40,11 @@ model UserTypes {
 }
 
 model Sessions {
-  uuid       String   @id
-  user_id    Int
-  user       Users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  created_at DateTime @default(now())
+  uuid           String   @id
+  user_id        Int
+  user           Users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_agent_sum String
+  created_at     DateTime @default(now())
 
   @@map("sessions")
 }

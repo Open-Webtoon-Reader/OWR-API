@@ -13,7 +13,8 @@ export class AuthGuard implements CanActivate{
         const sessionUUID = request.cookies.session;
         if(!sessionUUID)
             throw new UnauthorizedException("No session provided");
-        const user = await this.authService.verifySession(sessionUUID);
+        const userAgent = request.headers["user-agent"];
+        const user = await this.authService.verifySession(sessionUUID, userAgent);
         if(!user)
             throw new UnauthorizedException("Invalid session");
         request.user = user;

@@ -1,8 +1,8 @@
-import {Body, Controller, HttpCode, Post, Res} from "@nestjs/common";
+import {Body, Controller, HttpCode, Post, Req, Res} from "@nestjs/common";
 import {ApiResponse, ApiTags} from "@nestjs/swagger";
 import {AuthService} from "./auth.service";
 import {LoginDto} from "./models/dto/login.dto";
-import {FastifyReply} from "fastify";
+import {FastifyReply, FastifyRequest} from "fastify";
 import {ConfigService} from "@nestjs/config";
 import {HttpStatusCode} from "axios";
 
@@ -22,8 +22,9 @@ export class AuthController{
     @ApiResponse({status: HttpStatusCode.NotFound, description: "User not found"})
     @ApiResponse({status: HttpStatusCode.Unauthorized, description: "Invalid password"})
     @ApiResponse({status: HttpStatusCode.BadRequest, description: "Invalid email format"})
-    async login(@Body() body: LoginDto, @Res({passthrough: true}) res: FastifyReply){
-        const sessionUUID = await this.authService.loginUser(body.email, body.password);
+    async login(@Body() body: LoginDto, @Req() request: FastifyRequest, @Res({passthrough: true}) res: FastifyReply){
+        const userAgent = request.headers["user-agent"];
+        const sessionUUID = await this.authService.loginUser(body.email, body.password, userAgent);
         res.setCookie("session", sessionUUID, {
             httpOnly: true,
             sameSite: "strict",
