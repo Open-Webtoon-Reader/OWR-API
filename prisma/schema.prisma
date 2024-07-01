@@ -13,6 +13,62 @@ datasource db {
   url      = "file:./database.db"
 }
 
+model Users {
+  id           Int         @id @default(autoincrement())
+  email        String      @unique
+  username     String
+  password     String
+  avatar_id    Int
+  avatar       Images      @relation(fields: [avatar_id], references: [id])
+  user_type_id Int
+  user_types   UserTypes   @relation(fields: [user_type_id], references: [id])
+  created_at   DateTime    @default(now())
+  updated_at   DateTime    @default(now()) @updatedAt
+  sessions     Sessions[]
+  favorites    Favorites[]
+  progress     Progress[]
+
+  @@map("users")
+}
+
+model UserTypes {
+  id   Int     @id @default(autoincrement())
+  name String
+  user Users[]
+
+  @@map("user_types")
+}
+
+model Sessions {
+  uuid       String   @id
+  user_id    Int
+  user       Users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  created_at DateTime @default(now())
+
+  @@map("sessions")
+}
+
+model Favorites {
+  user_id    Int
+  user       Users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  webtoon_id Int
+  webtoon    Webtoons @relation(fields: [webtoon_id], references: [id], onDelete: Cascade)
+
+  @@id([user_id, webtoon_id])
+  @@map("favorites")
+}
+
+model Progress {
+  user_id    Int
+  user       Users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  episode_id Int
+  episode    Episodes @relation(fields: [episode_id], references: [id], onDelete: Cascade)
+  progress   Int      @default(0)
+
+  @@id([user_id, episode_id])
+  @@map("progress")
+}
+
 model ImageTypes {
   id    Int      @id @default(autoincrement())
   name  String
@@ -32,6 +88,7 @@ model Images {
   mobile_banner     Webtoons?       @relation("mobile_banner")
   episodes          Episodes[]
   episode_images    EpisodeImages[]
+  users             Users[]
 
   @@map("images")
 }
@@ -71,6 +128,7 @@ model Webtoons {
   updated_at           DateTime        @default(now()) @updatedAt
   genres               WebtoonGenres[]
   episodes             Episodes[]
+  favorites            Favorites[]
 
   @@unique([title, author, language])
   @@map("webtoons")
@@ -86,6 +144,7 @@ model Episodes {
   thumbnail      Images          @relation(fields: [thumbnail_id], references: [id])
   created_at     DateTime        @default(now())
   episode_images EpisodeImages[]
+  progress       Progress[]
 
   @@unique([webtoon_id, number])
   @@map("episodes")
