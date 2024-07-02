@@ -12,6 +12,7 @@ import {SwaggerTheme, SwaggerThemeNameEnum} from "swagger-themes";
 import {LoggerMiddleware} from "./common/middlewares/logger.middleware";
 import {Logger} from "@nestjs/common";
 import {CustomValidationPipe} from "./common/pipes/custom-validation.pipe";
+import fastifyCookie from "@fastify/cookie";
 
 dotenv.config();
 
@@ -89,6 +90,9 @@ async function loadServer(server: NestFastifyApplication<RawServerDefault>, serv
         crossOriginOpenerPolicy: false,
         crossOriginResourcePolicy: false,
     });
+    await server.register(fastifyCookie, {
+        secret: process.env.COOKIE_SECRET,
+    });
 
     // Swagger
     const config = new DocumentBuilder()
@@ -96,6 +100,7 @@ async function loadServer(server: NestFastifyApplication<RawServerDefault>, serv
         .setDescription("Documentation for the Phoenix API")
         .setVersion(process.env.npm_package_version)
         .addBearerAuth()
+        .addCookieAuth("session")
         .build();
     const document = SwaggerModule.createDocument(server, config);
     const theme = new SwaggerTheme();
