@@ -110,4 +110,21 @@ export class AuthService{
         });
         return count;
     }
+
+    async logoutUser(userId: number, sessionUUID: string){
+        await this.prismaService.sessions.delete({
+            where: {
+                uuid: sessionUUID,
+                user_id: userId,
+            },
+        });
+    }
+
+    async logoutAllUser(userId: number){
+        await this.prismaService.sessions.deleteMany({
+            where: {
+                user_id: userId,
+            },
+        });
+    }
 }
