@@ -4,12 +4,13 @@ import {DownloadManagerService} from "../webtoon/download-manager.service";
 import {AddWebtoonToQueueDto} from "./models/dto/add-webtoon-to-queue.dto";
 import {HttpStatusCode} from "axios";
 import CachedWebtoonModel from "../webtoon/models/models/cached-webtoon.model";
-import {AdminGuard} from "./guard/admin.guard";
+import {AdminGuard} from "../../user/guard/admin.guard";
+import {AuthGuard} from "../../user/guard/auth.guard";
 
 
 @Controller("admin")
 @ApiTags("Admin")
-@UseGuards(AdminGuard)
+@UseGuards(AuthGuard, AdminGuard)
 export class AdminController{
 
     constructor(

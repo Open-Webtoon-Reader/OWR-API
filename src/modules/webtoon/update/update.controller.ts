@@ -1,13 +1,14 @@
 import {Controller, Logger, Post, UseGuards} from "@nestjs/common";
 import {UpdateService} from "./update.service";
 import {ApiBearerAuth, ApiResponse, ApiTags} from "@nestjs/swagger";
-import {AdminGuard} from "../admin/guard/admin.guard";
 import {HttpStatusCode} from "axios";
+import {AuthGuard} from "../../user/guard/auth.guard";
+import {AdminGuard} from "../../user/guard/admin.guard";
 
 
 @Controller("update")
 @ApiTags("Update")
-@UseGuards(AdminGuard)
+@UseGuards(AuthGuard, AdminGuard)
 export class UpdateController{
 
     private readonly logger = new Logger(UpdateController.name);

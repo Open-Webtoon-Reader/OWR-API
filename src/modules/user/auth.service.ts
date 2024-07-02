@@ -3,6 +3,7 @@ import {PrismaService} from "../misc/prisma.service";
 import {CipherService} from "../misc/cipher.service";
 import * as uuid from "uuid";
 import {ConfigService} from "@nestjs/config";
+import {UserEntity} from "./models/entities/user.entity";
 
 
 @Injectable()
@@ -53,14 +54,11 @@ export class AuthService{
         return sessionUUID;
     }
 
-    async verifySession(sessionUUID: string, userAgent: string): Promise<any>{
+    async verifySession(sessionUUID: string, userAgent: string): Promise<UserEntity>{
         const userAgentSum = this.cipherService.getSum(userAgent);
-        const session: any = await this.prismaService.sessions.findUnique({
+        const session = await this.prismaService.sessions.findUnique({
             where: {
                 uuid: sessionUUID,
-            },
-            include: {
-                user: true,
             }
         });
         if(!session)
@@ -82,8 +80,24 @@ export class AuthService{
             });
             throw new UnauthorizedException("Session expired");
         }
-        delete session.user.password;
-        return session.user;
+        const user = await this.prismaService.users.findUnique({
+            where: {
+                id: session.user_id,
+            },
+            include: {
+                type: true,
+                avatar: true,
+            }
+        });
+        return new UserEntity(
+            user.id,
+            user.email,
+            user.username,
+            user.avatar?.sum,
+            user.type.name,
+            user.created_at,
+            user.updated_at,
+        );
     }
 
     async cleanSessions(): Promise<number>{
