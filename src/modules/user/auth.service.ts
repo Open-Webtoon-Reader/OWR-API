@@ -86,4 +86,14 @@ export class AuthService{
         return session.user;
     }
 
+    async cleanSessions(): Promise<number>{
+        const {count} = await this.prismaService.sessions.deleteMany({
+            where: {
+                created_at: {
+                    lt: new Date(Date.now() - parseInt(this.configService.get("SESSION_EXPIRATION")) * 1000),
+                },
+            },
+        });
+        return count;
+    }
 }
