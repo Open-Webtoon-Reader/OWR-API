@@ -79,10 +79,10 @@ export class WebtoonDatabaseService{
                 }
             });
             const imagesToSave: any[] = [];
-            for(let i: number = 0; i < episodeData.images.length; i++){
-                if(!dbImages.find((dbImage: any) => dbImage.sum === this.miscService.getSum(episodeData.images[i])))
+            for(let i: number = 0; i < imagesSum.length; i++){
+                if(!dbImages.find(dbImage => dbImage.sum === imagesSum[i]))
                     imagesToSave.push({
-                        sum: this.miscService.getSum(episodeData.images[i]),
+                        sum: imagesSum[i],
                         type_id: imageType.id,
                     });
             }
