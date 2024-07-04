@@ -80,7 +80,7 @@ export class WebtoonDatabaseService{
             });
             const imagesToSave: any[] = [];
             for(let i: number = 0; i < imagesSum.length; i++){
-                if(!dbImages.find(dbImage => dbImage.sum === imagesSum[i]))
+                if(!dbImages.find(dbImage => dbImage.sum === imagesSum[i]) && !imagesToSave.find(image => image.sum === imagesSum[i]))
                     imagesToSave.push({
                         sum: imagesSum[i],
                         type_id: imageType.id,
@@ -89,6 +89,7 @@ export class WebtoonDatabaseService{
             await tx.images.createMany({
                 data: imagesToSave
             });
+
             dbImages = await tx.images.findMany({
                 where: {
                     sum: {
@@ -96,14 +97,17 @@ export class WebtoonDatabaseService{
                     }
                 }
             });
-            // Re-order dbImages to match imagesSum order
-            dbImages.sort((a: any, b: any) => {
-                return imagesSum.indexOf(a.sum) - imagesSum.indexOf(b.sum);
-            });
+            const episodeImages = [];
+            for(let i: number = 0; i < imagesSum.length; i++){
+                const dbImage = dbImages.find(dbImage => dbImage.sum === imagesSum[i]);
+                episodeImages.push({
+                    id: dbImage.id
+                });
+            }
 
             // Create episodeImages
             await tx.episodeImages.createMany({
-                data: dbImages.map((dbImage: any, index: number) => {
+                data: episodeImages.map((dbImage: any, index: number) => {
                     return {
                         number: index,
                         episode_id: dbEpisode.id,
@@ -111,9 +115,6 @@ export class WebtoonDatabaseService{
                     };
                 })
             });
-
-
-
 
             // Change webtoon updated_at
             await tx.webtoons.update({
