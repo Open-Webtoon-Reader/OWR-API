@@ -1,4 +1,4 @@
-import {Controller, Get, Param} from "@nestjs/common";
+import {Controller, Get, Header, Param} from "@nestjs/common";
 import {ApiResponse, ApiTags} from "@nestjs/swagger";
 import {WebtoonDatabaseService} from "./webtoon-database.service";
 import {WebtoonIdDto} from "./models/dto/webtoon-id.dto";
@@ -47,6 +47,7 @@ export class WebtoonController{
     }
 
     @Get("episodes/:episodeId/images")
+    @Header("Cache-Control", "public, max-age=604800000")
     @ApiResponse({status: 200, description: "Returns a list of images for an episode", type: String, isArray: true})
     async getEpisodeImagesNew(@Param() episodeIdDto: EpisodeIdDto): Promise<string[]>{
         return this.webtoonDatabaseService.getEpisodeImages(episodeIdDto.episodeId);
