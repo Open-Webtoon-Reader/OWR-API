@@ -5,9 +5,10 @@ import {WebtoonDownloaderService} from "./webtoon-downloader.service";
 import {WebtoonDatabaseService} from "./webtoon-database.service";
 import {DownloadManagerService} from "./download-manager.service";
 import {MiscModule} from "../../misc/misc.module";
+import {FileModule} from "../../file/file.module";
 
 @Module({
-    imports: [MiscModule],
+    imports: [MiscModule, FileModule],
     controllers: [WebtoonController],
     providers: [WebtoonParserService, WebtoonDownloaderService, WebtoonDatabaseService, DownloadManagerService],
     exports: [DownloadManagerService, WebtoonDatabaseService, WebtoonParserService],
