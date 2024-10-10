@@ -17,17 +17,25 @@ export class FileService{
         private readonly cipherService: MiscService,
     ){
         if(this.configService.get("FILESYSTEM") === "s3")
-            this.saver = new S3Saver(
-                this.configService.get("S3_ENDPOINT"),
-                this.configService.get("S3_PORT"),
-                this.configService.get("S3_USE_SSL") === "true",
-                this.configService.get("S3_REGION"),
-                this.configService.get("S3_ACCESS_KEY"),
-                this.configService.get("S3_SECRET_KEY"),
-                this.configService.get("S3_BUCKET_NAME")
-            );
+            this.saver = this.getS3Saver();
         else
-            this.saver = new FileSaver("images");
+            this.saver = this.getFileSaver();
+    }
+
+    getS3Saver(){
+        return new S3Saver(
+            this.configService.get("S3_ENDPOINT"),
+            this.configService.get("S3_PORT"),
+            this.configService.get("S3_USE_SSL") === "true",
+            this.configService.get("S3_REGION"),
+            this.configService.get("S3_ACCESS_KEY"),
+            this.configService.get("S3_SECRET_KEY"),
+            this.configService.get("S3_BUCKET_NAME")
+        );
+    }
+
+    getFileSaver(){
+        return new FileSaver("images");
     }
 
     async saveImage(data: Buffer): Promise<string>{

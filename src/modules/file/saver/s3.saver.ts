@@ -21,7 +21,7 @@ export class S3Saver implements Saver{
         this.bucketName = bucketName;
     }
 
-    private async createBucketIfNotExists(): Promise<void>{
+    public async createBucketIfNotExists(): Promise<void>{
         if(this.bucketExists)
             return;
         try{
@@ -47,5 +47,24 @@ export class S3Saver implements Saver{
     async removeFile(sum: string): Promise<void>{
         await this.createBucketIfNotExists();
         await this.s3Client.removeObject(this.bucketName, `${sum.substring(0, 2)}/${sum}.webp`);
+    }
+
+    async clearBucket(){
+        const objectsList = [];
+
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-expect-error
+        const objectsStream = this.s3Client.listObjects(this.bucketName, "", true, {IncludeVersion: true});
+        objectsStream.on("data", function(obj){
+            objectsList.push(obj);
+        });
+        objectsStream.on("error", function(e){
+            return console.log(e);
+        });
+        objectsStream.on("end", async() => {
+            console.log(`Clearing ${objectsList.length} objects from the bucket`);
+            await this.s3Client.removeObjects(this.bucketName, objectsList);
+            console.log("Bucket cleared");
+        });
     }
 }

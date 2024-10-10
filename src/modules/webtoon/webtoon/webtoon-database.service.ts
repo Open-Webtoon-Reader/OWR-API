@@ -1,4 +1,3 @@
-import * as fs from "fs";
 import CachedWebtoonModel from "./models/models/cached-webtoon.model";
 import EpisodeModel from "./models/models/episode.model";
 import EpisodeDataModel from "./models/models/episode-data.model";
@@ -14,19 +13,19 @@ import ImageTypes from "./models/enums/image-types";
 import WebtoonResponse from "./models/responses/webtoon-response";
 import MigrationInfosResponse from "../migration/models/responses/migration-infos.response";
 import {FileService} from "../../file/file.service";
+import {ConfigService} from "@nestjs/config";
 
 @Injectable()
 export class WebtoonDatabaseService{
 
-    private readonly CHUNK_SIZE: number = 10;
     private readonly MIGRATION_CHUNK_SIZE: number = 15000;
 
     private readonly logger = new Logger(WebtoonDatabaseService.name);
 
     constructor(
         private readonly prismaService: PrismaService,
-        private readonly miscService: MiscService,
         private readonly fileService: FileService,
+        private readonly configService: ConfigService,
     ){}
 
     async saveEpisode(webtoon: CachedWebtoonModel, episode: EpisodeModel, episodeData: EpisodeDataModel): Promise<void>{
@@ -73,10 +72,10 @@ export class WebtoonDatabaseService{
 
             // Save images
             const imagesSum = [];
-            const batchSize = 20;
+            const batchSize = parseInt(this.configService.get("S3_BATCH_SIZE"));
             for (let i = 0; i < episodeData.images.length; i += batchSize){
                 const batch = episodeData.images.slice(i, i + batchSize);
-                const results = await Promise.all(batch.map(promise => this.saveImage(promise)));
+                const results = await Promise.all(batch.map(buffer => this.saveImage(buffer)));
                 imagesSum.push(...results);
             }
             let dbImages: any[] = await tx.images.findMany({

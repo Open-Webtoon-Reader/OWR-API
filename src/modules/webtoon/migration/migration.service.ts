@@ -8,6 +8,8 @@ import axios from "axios";
 import {PrismaService} from "../../misc/prisma.service";
 import * as fs from "node:fs";
 import * as https from "node:https";
+import {FileService} from "../../file/file.service";
+import {ConfigService} from "@nestjs/config";
 
 @Injectable()
 export class MigrationService{
@@ -16,11 +18,13 @@ export class MigrationService{
 
     constructor(
         private readonly webtoonDatabaseService: WebtoonDatabaseService,
-        private readonly prismaService: PrismaService
+        private readonly prismaService: PrismaService,
+        private readonly fileService: FileService,
+        private readonly configService: ConfigService,
     ){}
 
     async migrateFrom(url: string, adminKey: string){
-        this.logger.debug(`Start migration from ${url}`)
+        this.logger.debug(`Start migration from ${url}`);
         // Get migration infos using axios from the url
         const response = await axios.get(url + "/api/v1/migration/infos", {
             headers: {
@@ -97,5 +101,61 @@ export class MigrationService{
             console.error(`Error downloading the file: ${error}`);
             throw error;
         }
+    }
+
+    async migrateToS3(){
+        const s3Saver = this.fileService.getS3Saver();
+        const dbImageBatchSize = 10000;
+        const s3BatchSize = parseInt(this.configService.get("S3_BATCH_SIZE"));
+        const imageCount = await this.prismaService.images.count();
+        await s3Saver.createBucketIfNotExists();
+        for(let i = 0; i < imageCount; i += dbImageBatchSize){
+            this.logger.debug(`Migrating images from ${i} to ${i + dbImageBatchSize}`);
+            const images = await this.prismaService.images.findMany({
+                skip: i,
+                take: dbImageBatchSize,
+                select: {
+                    id: true,
+                    sum: true
+                }
+            });
+            const imageSums = images.map(image => image.sum);
+            for(let j = 0; j < imageSums.length; j += s3BatchSize){
+                this.logger.debug(`Uploading images from ${j} to ${j + s3BatchSize}`);
+                const batch = imageSums.slice(j, j + s3BatchSize);
+                await Promise.all(batch.map(async(sum) => s3Saver.saveFile(await this.fileService.loadImage(sum), sum)));
+            }
+        }
+        this.logger.debug("Migration to S3 completed!");
+    }
+
+    async migrateToLocal(){
+        const fileSaver = this.fileService.getFileSaver();
+        const dbImageBatchSize = 10000;
+        const localBatchSize = parseInt(this.configService.get("S3_BATCH_SIZE"));
+        const imageCount = await this.prismaService.images.count();
+        for(let i = 0; i < imageCount; i += dbImageBatchSize){
+            this.logger.debug(`Migrating images from ${i} to ${i + dbImageBatchSize}`);
+            const images = await this.prismaService.images.findMany({
+                skip: i,
+                take: dbImageBatchSize,
+                select: {
+                    id: true,
+                    sum: true
+                }
+            });
+            const imageSums = images.map(image => image.sum);
+            for(let j = 0; j < imageSums.length; j += localBatchSize){
+                this.logger.debug(`Saving images from ${j} to ${j + localBatchSize}`);
+                const batch = imageSums.slice(j, j + localBatchSize);
+                await Promise.all(batch.map(async(sum) => fileSaver.saveFile(await this.fileService.loadImage(sum), sum)));
+            }
+        }
+        this.logger.debug("Migration to local completed!");
+    }
+
+    async clearS3(): Promise<void>{
+        const s3Saver = this.fileService.getS3Saver();
+        await s3Saver.clearBucket();
     }
 }
