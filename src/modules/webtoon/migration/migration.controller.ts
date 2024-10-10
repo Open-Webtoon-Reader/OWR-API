@@ -5,12 +5,13 @@ import {ReadStream} from "fs";
 import {ChunkNumberDto} from "../../../common/models/dto/chunk-number.dto";
 import MigrationInfosResponse from "./models/responses/migration-infos.response";
 import MigrateFromDto from "./models/dto/migrate-from.dto";
-import {AdminGuard} from "../admin/guard/admin.guard";
 import {HttpStatusCode} from "axios";
+import {AuthGuard} from "../../user/guard/auth.guard";
+import {AdminGuard} from "../../user/guard/admin.guard";
 
 @Controller("migration")
 @ApiTags("Migration")
-@UseGuards(AdminGuard)
+@UseGuards(AuthGuard, AdminGuard)
 export class MigrationController{
     constructor(
         private readonly migrationService: MigrationService
