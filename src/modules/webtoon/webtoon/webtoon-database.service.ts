@@ -1,4 +1,3 @@
-import * as fs from "fs";
 import CachedWebtoonModel from "./models/models/cached-webtoon.model";
 import EpisodeModel from "./models/models/episode.model";
 import EpisodeDataModel from "./models/models/episode-data.model";
@@ -13,18 +12,20 @@ import {MiscService} from "../../misc/misc.service";
 import ImageTypes from "./models/enums/image-types";
 import WebtoonResponse from "./models/responses/webtoon-response";
 import MigrationInfosResponse from "../migration/models/responses/migration-infos.response";
+import {FileService} from "../../file/file.service";
+import {ConfigService} from "@nestjs/config";
 
 @Injectable()
 export class WebtoonDatabaseService{
 
-    private readonly CHUNK_SIZE: number = 10;
     private readonly MIGRATION_CHUNK_SIZE: number = 15000;
 
     private readonly logger = new Logger(WebtoonDatabaseService.name);
 
     constructor(
         private readonly prismaService: PrismaService,
-        private readonly miscService: MiscService
+        private readonly fileService: FileService,
+        private readonly configService: ConfigService,
     ){}
 
     async saveEpisode(webtoon: CachedWebtoonModel, episode: EpisodeModel, episodeData: EpisodeDataModel): Promise<void>{
@@ -53,7 +54,7 @@ export class WebtoonDatabaseService{
             const thumbnailType = imageTypes.find(type => type.name === ImageTypes.EPISODE_THUMBNAIL);
             const imageType = imageTypes.find(type => type.name === ImageTypes.EPISODE_IMAGE);
 
-            const thumbnailSum: string = this.saveImage(episodeData.thumbnail);
+            const thumbnailSum: string = await this.saveImage(episodeData.thumbnail);
             const dbThumbnail = await tx.images.create({
                 data: {
                     sum: thumbnailSum,
@@ -70,7 +71,13 @@ export class WebtoonDatabaseService{
             });
 
             // Save images
-            const imagesSum: string[] = episodeData.images.map((image: Buffer) => this.saveImage(image));
+            const imagesSum = [];
+            const batchSize = parseInt(this.configService.get("S3_BATCH_SIZE"));
+            for (let i = 0; i < episodeData.images.length; i += batchSize){
+                const batch = episodeData.images.slice(i, i + batchSize);
+                const results = await Promise.all(batch.map(buffer => this.saveImage(buffer)));
+                imagesSum.push(...results);
+            }
             let dbImages: any[] = await tx.images.findMany({
                 where: {
                     sum: {
@@ -125,7 +132,11 @@ export class WebtoonDatabaseService{
                     updated_at: new Date()
                 }
             });
-        });
+        },
+        {
+            timeout: 1000 * 60 * 5
+        }
+        );
     }
 
     async saveWebtoon(webtoon: WebtoonModel, webtoonData: WebtoonDataModel): Promise<void>{
@@ -158,10 +169,10 @@ export class WebtoonDatabaseService{
             const topType = imageTypes.find(type => type.name === ImageTypes.WEBTOON_TOP_BANNER);
             const mobileType = imageTypes.find(type => type.name === ImageTypes.WEBTOON_MOBILE_BANNER);
 
-            const thumbnailSum: string = this.saveImage(webtoonData.thumbnail);
-            const backgroundSum: string = this.saveImage(webtoonData.backgroundBanner);
-            const topSum: string = this.saveImage(webtoonData.topBanner);
-            const mobileSum: string = this.saveImage(webtoonData.mobileBanner);
+            const thumbnailSum: string = await this.saveImage(webtoonData.thumbnail);
+            const backgroundSum: string = await this.saveImage(webtoonData.backgroundBanner);
+            const topSum: string = await this.saveImage(webtoonData.topBanner);
+            const mobileSum: string = await this.saveImage(webtoonData.mobileBanner);
 
             const dbThumbnail = await tx.images.create({
                 data: {
@@ -432,30 +443,20 @@ export class WebtoonDatabaseService{
         });
         const images: Record<string, Buffer> = {};
         for(const image of dbImages)
-            images[image.sum] = this.loadImage(image.sum);
+            images[image.sum] = await this.loadImage(image.sum);
         return images;
     }
 
-    saveImage(image: Buffer): string{
-        if(!fs.existsSync("./images"))
-            fs.mkdirSync("./images");
-        const imageSum: string = this.miscService.getSum(image);
-        const folder = imageSum.substring(0, 2);
-        const path = `./images/${folder}`;
-        if(!fs.existsSync(path))
-            fs.mkdirSync(path);
-        fs.writeFileSync(`${path}/${imageSum}.webp`, image);
-        return imageSum;
+    async saveImage(image: Buffer): Promise<string>{
+        return await this.fileService.saveImage(image);
     }
 
-    loadImage(imageSum: string): Buffer{
-        const folder = imageSum.substring(0, 2);
-        return fs.readFileSync(`./images/${folder}/${imageSum}.webp`);
+    async loadImage(imageSum: string): Promise<Buffer>{
+        return await this.fileService.loadImage(imageSum);
     }
 
-    removeImage(imageSum: string): void{
-        const folder = imageSum.substring(0, 2);
-        fs.rmSync(`./images/${folder}/${imageSum}.webp`);
+    async removeImage(imageSum: string): Promise<void>{
+        await this.fileService.removeImage(imageSum);
     }
 
     async getRandomThumbnails(){

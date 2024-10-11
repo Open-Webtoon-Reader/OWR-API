@@ -42,4 +42,22 @@ export class MigrationController{
     async getDatabase(@Res({passthrough: true}) _: Response): Promise<StreamableFile>{
         return new StreamableFile(await this.migrationService.getDatabase());
     }
+
+    @Post("to/s3")
+    @ApiBearerAuth()
+    async migrateToS3(){
+        this.migrationService.migrateToS3();
+    }
+
+    @Post("to/local")
+    @ApiBearerAuth()
+    async migrateToLocal(){
+        this.migrationService.migrateToLocal();
+    }
+
+    // @Delete("s3")
+    // @ApiBearerAuth()
+    // async removeS3(){
+    //     this.migrationService.clearS3();
+    // }
 }

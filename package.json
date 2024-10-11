@@ -36,6 +36,7 @@
     "fastify": "4.28.0",
     "jsdom": "^24.1.0",
     "jszip": "^3.10.1",
+    "minio": "^8.0.1",
     "prisma": "^5.16.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
