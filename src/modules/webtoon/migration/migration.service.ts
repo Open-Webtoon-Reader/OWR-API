@@ -121,9 +121,15 @@ export class MigrationService{
             });
             const imageSums = images.map(image => image.sum);
             for(let j = 0; j < imageSums.length; j += s3BatchSize){
-                this.logger.debug(`Uploading images from ${j} to ${j + s3BatchSize}`);
-                const batch = imageSums.slice(j, j + s3BatchSize);
-                await Promise.all(batch.map(async(sum) => s3Saver.saveFile(await this.fileService.loadImage(sum), sum)));
+                try{
+                    this.logger.debug(`Uploading images from ${j} to ${j + s3BatchSize}`);
+                    const batch = imageSums.slice(j, j + s3BatchSize);
+                    await Promise.all(batch.map(async(sum) => s3Saver.saveFile(await this.fileService.loadImage(sum), sum)));
+                }catch (error){
+                    this.logger.error(`Error uploading images from ${j} to ${j + s3BatchSize}: ${error}`);
+                    await new Promise(resolve => setTimeout(resolve, 10000));
+                    j -= s3BatchSize;
+                }
             }
         }
         this.logger.debug("Migration to S3 completed!");
@@ -146,9 +152,15 @@ export class MigrationService{
             });
             const imageSums = images.map(image => image.sum);
             for(let j = 0; j < imageSums.length; j += localBatchSize){
-                this.logger.debug(`Saving images from ${j} to ${j + localBatchSize}`);
-                const batch = imageSums.slice(j, j + localBatchSize);
-                await Promise.all(batch.map(async(sum) => fileSaver.saveFile(await this.fileService.loadImage(sum), sum)));
+                try {
+                    this.logger.debug(`Saving images from ${j} to ${j + localBatchSize}`);
+                    const batch = imageSums.slice(j, j + localBatchSize);
+                    await Promise.all(batch.map(async(sum) => fileSaver.saveFile(await this.fileService.loadImage(sum), sum)));
+                }catch (error){
+                    this.logger.error(`Error saving images from ${j} to ${j + localBatchSize}: ${error}`);
+                    await new Promise(resolve => setTimeout(resolve, 10000));
+                    j -= localBatchSize;
+                }
             }
         }
         this.logger.debug("Migration to local completed!");
