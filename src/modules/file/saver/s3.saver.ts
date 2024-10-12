@@ -2,6 +2,7 @@ import {Readable} from "stream";
 import * as Minio from "minio";
 import {Saver} from "./saver";
 import {ReadStream} from "fs";
+import {BucketItem} from "minio";
 
 export class S3Saver implements Saver{
 
@@ -66,5 +67,20 @@ export class S3Saver implements Saver{
             await this.s3Client.removeObjects(this.bucketName, objectsList);
             console.log("Bucket cleared");
         });
+    }
+
+    async listObjects(): Promise<BucketItem[]>{
+        const objectsList = [];
+        const objectsStream = this.s3Client.listObjects(this.bucketName, "", true);
+        objectsStream.on("data", function(obj){
+            objectsList.push(obj);
+        });
+        objectsStream.on("error", function(e){
+            return console.log(e);
+        });
+        objectsStream.on("end", function(){
+            console.log("Listing objects finished");
+        });
+        return objectsList;
     }
 }

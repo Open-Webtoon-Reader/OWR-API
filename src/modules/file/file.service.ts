@@ -6,6 +6,7 @@ import {Saver} from "./saver/saver";
 import {S3Saver} from "./saver/s3.saver";
 import {FileSaver} from "./saver/file.saver";
 import * as fs from "node:fs";
+import {BucketItem} from "minio";
 
 @Injectable()
 export class FileService{
@@ -64,6 +65,13 @@ export class FileService{
     }
 
     async checkIntegrity(){
+        if(this.configService.get("FILESYSTEM") === "s3")
+            await this.checkS3Integrity();
+        else
+            await this.checkLocalIntegrity();
+    }
+
+    private async checkLocalIntegrity(){
         function checkIntegrityRecursive(path: string){
             const files = fs.readdirSync(path);
             for(const file of files){
@@ -76,6 +84,16 @@ export class FileService{
             }
         }
         checkIntegrityRecursive("images");
+        console.log("Integrity check finished");
+    }
+
+    private async checkS3Integrity(){
+        const saver: S3Saver = this.saver as S3Saver;
+        const objectsList: BucketItem[] = await saver.listObjects();
+        for(const obj of objectsList){
+            if(obj.size === 0)
+                console.log(obj);
+        }
         console.log("Integrity check finished");
     }
 }
