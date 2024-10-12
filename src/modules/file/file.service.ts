@@ -12,13 +12,17 @@ import {BucketItem} from "minio";
 export class FileService{
 
     private readonly saver: Saver;
+    private readonly secondarySaver: Saver;
 
     constructor(
         private readonly configService: ConfigService,
         private readonly prismaService: PrismaService,
         private readonly cipherService: MiscService,
     ){
-        if(this.configService.get("FILESYSTEM") === "s3")
+        if(this.configService.get("FILESYSTEM") === "both"){
+            this.saver = this.getS3Saver();
+            this.secondarySaver = this.getFileSaver();
+        }else if(this.configService.get("FILESYSTEM") === "s3")
             this.saver = this.getS3Saver();
         else
             this.saver = this.getFileSaver();
@@ -43,6 +47,8 @@ export class FileService{
     async saveImage(data: Buffer): Promise<string>{
         const sum = this.cipherService.getSum(data);
         await this.saver.saveFile(data, sum);
+        if(this.configService.get("FILESYSTEM") === "both")
+            await this.secondarySaver.saveFile(data, sum);
         return sum;
     }
 
@@ -62,10 +68,15 @@ export class FileService{
 
     async removeImage(sum: string): Promise<void>{
         await this.saver.removeFile(sum);
+        if(this.configService.get("FILESYSTEM") === "both")
+            await this.secondarySaver.removeFile(sum);
     }
 
     async checkIntegrity(){
-        if(this.configService.get("FILESYSTEM") === "s3")
+        if(this.configService.get("FILESYSTEM") === "both"){
+            await this.checkS3Integrity();
+            await this.checkLocalIntegrity();
+        }else if(this.configService.get("FILESYSTEM") === "s3")
             await this.checkS3Integrity();
         else
             await this.checkLocalIntegrity();
