@@ -8,7 +8,6 @@ import WebtoonModel from "./models/models/webtoon.model";
 import WebtoonDataModel from "./models/models/webtoon-data.model";
 import {Injectable, Logger, NotFoundException} from "@nestjs/common";
 import {PrismaService} from "../../misc/prisma.service";
-import {MiscService} from "../../misc/misc.service";
 import ImageTypes from "./models/enums/image-types";
 import WebtoonResponse from "./models/responses/webtoon-response";
 import MigrationInfosResponse from "../migration/models/responses/migration-infos.response";
@@ -28,7 +27,7 @@ export class WebtoonDatabaseService{
         private readonly configService: ConfigService,
     ){}
 
-    async saveEpisode(webtoon: CachedWebtoonModel, episode: EpisodeModel, episodeData: EpisodeDataModel): Promise<void>{
+    async saveEpisode(webtoon: CachedWebtoonModel, episode: EpisodeModel, episodeData: EpisodeDataModel, force: boolean = false): Promise<void>{
         this.logger.debug(`Saving episode ${episode.number}...`);
         const dbWebtoon = await this.prismaService.webtoons.findFirst({
             where: {
@@ -37,8 +36,10 @@ export class WebtoonDatabaseService{
         });
         if(!dbWebtoon)
             throw new NotFoundException(`Webtoon ${webtoon.title} not found in database.`);
-        if(await this.isEpisodeSaved(dbWebtoon.id, episode.number))
+        if(!force && await this.isEpisodeSaved(dbWebtoon.id, episode.number)){
+            this.logger.debug(`Episode ${episode.number} already saved.`);
             return;
+        }
         // Start prisma transaction
         await this.prismaService.$transaction(async(tx) => {
             const imageTypes = await tx.imageTypes.findMany({
@@ -55,12 +56,42 @@ export class WebtoonDatabaseService{
             const imageType = imageTypes.find(type => type.name === ImageTypes.EPISODE_IMAGE);
 
             const thumbnailSum: string = await this.saveImage(episodeData.thumbnail);
-            const dbThumbnail = await tx.images.create({
-                data: {
-                    sum: thumbnailSum,
-                    type_id: thumbnailType.id
+            // Check if thumbnail already exists
+            let dbThumbnail = await tx.images.findFirst({
+                where: {
+                    sum: thumbnailSum
                 }
             });
+            if(!dbThumbnail){
+                dbThumbnail = await tx.images.create({
+                    data: {
+                        sum: thumbnailSum,
+                        type_id: thumbnailType.id
+                    }
+                });
+            }
+
+            // Delete old episode if force is true
+            if(force){
+                const dbEpisode = await tx.episodes.findFirst({
+                    where: {
+                        webtoon_id: dbWebtoon.id,
+                        number: episode.number
+                    }
+                });
+                if(dbEpisode){
+                    await tx.episodeImages.deleteMany({
+                        where: {
+                            episode_id: dbEpisode.id
+                        }
+                    });
+                    await tx.episodes.delete({
+                        where: {
+                            id: dbEpisode.id
+                        }
+                    });
+                }
+            }
             const dbEpisode = await tx.episodes.create({
                 data: {
                     title: episode.title,

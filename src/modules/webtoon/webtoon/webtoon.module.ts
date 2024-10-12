@@ -11,6 +11,6 @@ import {FileModule} from "../../file/file.module";
     imports: [MiscModule, FileModule],
     controllers: [WebtoonController],
     providers: [WebtoonParserService, WebtoonDownloaderService, WebtoonDatabaseService, DownloadManagerService],
-    exports: [DownloadManagerService, WebtoonDatabaseService, WebtoonParserService],
+    exports: [DownloadManagerService, WebtoonDatabaseService, WebtoonParserService, WebtoonDownloaderService],
 })
 export class WebtoonModule{}

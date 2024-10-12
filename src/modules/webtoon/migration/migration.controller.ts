@@ -1,4 +1,4 @@
-import {Body, Controller, Get, Post, Query, Res, StreamableFile, UseGuards} from "@nestjs/common";
+import {Body, Controller, Get, Param, Post, Query, Res, StreamableFile, UseGuards} from "@nestjs/common";
 import {ApiBearerAuth, ApiResponse, ApiTags} from "@nestjs/swagger";
 import {MigrationService} from "./migration.service";
 import {ReadStream} from "fs";
@@ -53,6 +53,12 @@ export class MigrationController{
     @ApiBearerAuth()
     async migrateToLocal(){
         this.migrationService.migrateToLocal();
+    }
+
+    @Post("update/:episode_id")
+    @ApiBearerAuth()
+    async updateEpisode(@Param("episode_id") episodeId: number){
+        this.migrationService.reDownloadEpisode(episodeId);
     }
 
     // @Delete("s3")

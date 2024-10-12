@@ -90,10 +90,9 @@ export class FileService{
     private async checkS3Integrity(){
         const saver: S3Saver = this.saver as S3Saver;
         const objectsList: BucketItem[] = await saver.listObjects();
-        for(const obj of objectsList){
+        for(const obj of objectsList)
             if(obj.size === 0)
-                console.log(obj);
-        }
+                console.log(obj.name);
         console.log("Integrity check finished");
     }
 }

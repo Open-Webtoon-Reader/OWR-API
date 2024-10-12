@@ -10,6 +10,8 @@ import * as fs from "node:fs";
 import * as https from "node:https";
 import {FileService} from "../../file/file.service";
 import {ConfigService} from "@nestjs/config";
+import {WebtoonParserService} from "../webtoon/webtoon-parser.service";
+import {WebtoonDownloaderService} from "../webtoon/webtoon-downloader.service";
 
 @Injectable()
 export class MigrationService{
@@ -21,6 +23,8 @@ export class MigrationService{
         private readonly prismaService: PrismaService,
         private readonly fileService: FileService,
         private readonly configService: ConfigService,
+        private readonly webtoonParserService: WebtoonParserService,
+        private readonly webtoonDownloaderService: WebtoonDownloaderService,
     ){}
 
     async migrateFrom(url: string, adminKey: string){
@@ -169,5 +173,25 @@ export class MigrationService{
     async clearS3(): Promise<void>{
         const s3Saver = this.fileService.getS3Saver();
         await s3Saver.clearBucket();
+    }
+
+    async reDownloadEpisode(episodeId: number){
+        const episode = await this.prismaService.episodes.findUnique({
+            where: {
+                id: episodeId
+            }
+        });
+        const webtoon = await this.prismaService.webtoons.findUnique({
+            where: {
+                id: episode.webtoon_id
+            }
+        });
+        const webtoonModel = this.webtoonParserService.findWebtoon(webtoon.title, webtoon.language);
+        const episodeModels = await this.webtoonParserService.getEpisodes(webtoonModel);
+        const episodeModel = episodeModels.find(episodeModel => episodeModel.number === episode.number);
+        const imageUrls = await this.webtoonParserService.getEpisodeLinks(webtoonModel, episodeModel);
+        const episodeData = await this.webtoonDownloaderService.downloadEpisode(episodeModel, imageUrls);
+        await this.webtoonDatabaseService.saveEpisode(webtoonModel, episodeModel, episodeData, true);
+        console.log(`Episode ${episode.number} of ${webtoon.title} re-downloaded!`);
     }
 }
