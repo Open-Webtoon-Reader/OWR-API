@@ -5,6 +5,7 @@ import {MiscService} from "../misc/misc.service";
 import {Saver} from "./saver/saver";
 import {S3Saver} from "./saver/s3.saver";
 import {FileSaver} from "./saver/file.saver";
+import * as fs from "node:fs";
 
 @Injectable()
 export class FileService{
@@ -60,5 +61,21 @@ export class FileService{
 
     async removeImage(sum: string): Promise<void>{
         await this.saver.removeFile(sum);
+    }
+
+    async checkIntegrity(){
+        function checkIntegrityRecursive(path: string){
+            const files = fs.readdirSync(path);
+            for(const file of files){
+                const filePath = `${path}/${file}`;
+                const stats = fs.statSync(filePath);
+                if(stats.isDirectory())
+                    checkIntegrityRecursive(filePath);
+                else if(stats.size === 0)
+                    console.log(filePath);
+            }
+        }
+        checkIntegrityRecursive("images");
+        console.log("Integrity check finished");
     }
 }
