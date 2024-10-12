@@ -72,15 +72,10 @@ export class S3Saver implements Saver{
     async listObjects(): Promise<BucketItem[]>{
         const objectsList = [];
         const objectsStream = this.s3Client.listObjects(this.bucketName, "", true);
-        objectsStream.on("data", function(obj){
-            objectsList.push(obj);
+        return new Promise<BucketItem[]>((resolve, reject) => {
+            objectsStream.on("data", (obj) => objectsList.push(obj));
+            objectsStream.on("end", () => resolve(objectsList));
+            objectsStream.on("error", reject);
         });
-        objectsStream.on("error", function(e){
-            return console.log(e);
-        });
-        objectsStream.on("end", function(){
-            console.log("Listing objects finished");
-        });
-        return objectsList;
     }
 }
