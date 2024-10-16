@@ -37,7 +37,12 @@ export class S3Saver implements Saver{
 
     async saveFile(data: Buffer, sum: string): Promise<void>{
         await this.createBucketIfNotExists();
-        await this.s3Client.putObject(this.bucketName, `${sum.substring(0, 2)}/${sum}.webp`, data);
+        try{
+            await this.s3Client.putObject(this.bucketName, `${sum.substring(0, 2)}/${sum}.webp`, data);
+        }catch (e){
+            console.log(`Error saving file ${sum}:`);
+            console.log(e);
+        }
     }
     async getFile(sum: string): Promise<ReadStream>{
         await this.createBucketIfNotExists();
