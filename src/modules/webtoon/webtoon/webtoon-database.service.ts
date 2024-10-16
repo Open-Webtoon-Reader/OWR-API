@@ -13,6 +13,7 @@ import WebtoonResponse from "./models/responses/webtoon-response";
 import MigrationInfosResponse from "../migration/models/responses/migration-infos.response";
 import {FileService} from "../../file/file.service";
 import {ConfigService} from "@nestjs/config";
+import {MiscService} from "../../misc/misc.service";
 
 @Injectable()
 export class WebtoonDatabaseService{
@@ -25,6 +26,7 @@ export class WebtoonDatabaseService{
         private readonly prismaService: PrismaService,
         private readonly fileService: FileService,
         private readonly configService: ConfigService,
+        private readonly miscService: MiscService,
     ){}
 
     async saveEpisode(webtoon: CachedWebtoonModel, episode: EpisodeModel, episodeData: EpisodeDataModel, force: boolean = false): Promise<void>{
@@ -106,7 +108,18 @@ export class WebtoonDatabaseService{
             const batchSize = parseInt(this.configService.get("S3_BATCH_SIZE"));
             for (let i = 0; i < episodeData.images.length; i += batchSize){
                 const batch = episodeData.images.slice(i, i + batchSize);
-                const results = await Promise.all(batch.map(buffer => this.saveImage(buffer)));
+                const promises = [];
+                for(let j = 0; j < batch.length; j++){
+                    if(batch.slice(0, j).find(image => image === batch[j])) // TODO
+                        promises.push(
+                            new Promise(resolve => {
+                                resolve(this.miscService.getSum(batch[j]));
+                            })
+                        );
+                    else
+                        promises.push(this.saveImage(batch[j]));
+                }
+                const results = await Promise.all(promises);
                 imagesSum.push(...results);
             }
             let dbImages: any[] = await tx.images.findMany({
