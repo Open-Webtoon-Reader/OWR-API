@@ -68,8 +68,18 @@ export class S3Saver implements Saver{
             return console.log(e);
         });
         objectsStream.on("end", async() => {
-            console.log(`Clearing ${objectsList.length} objects from the bucket`);
-            await this.s3Client.removeObjects(this.bucketName, objectsList);
+            const batchSize = parseInt(process.env.S3_BATCH_SIZE);
+            console.log(`Preparing to clear ${objectsList.length} objects from the bucket`);
+            for (let i = 0; i < objectsList.length; i += batchSize){
+                const batch = objectsList.slice(i, i + batchSize);
+                console.log(`Clearing batch ${Math.floor(i / batchSize) + 1}: ${batch.length} objects`);
+                try {
+                    await this.s3Client.removeObjects(this.bucketName, batch);
+                    console.log(`Batch ${Math.floor(i / batchSize) + 1} cleared successfully`);
+                } catch (error){
+                    console.error(`Error clearing batch ${Math.floor(i / batchSize) + 1}:`, error);
+                }
+            }
             console.log("Bucket cleared");
         });
     }
