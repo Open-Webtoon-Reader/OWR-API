@@ -1,4 +1,4 @@
-import {Body, Controller, Get, Param, Post, Query, Res, StreamableFile, UseGuards} from "@nestjs/common";
+import {Body, Controller, Delete, Get, Param, Post, Query, Res, StreamableFile, UseGuards} from "@nestjs/common";
 import {ApiBearerAuth, ApiResponse, ApiTags} from "@nestjs/swagger";
 import {MigrationService} from "./migration.service";
 import {ReadStream} from "fs";
