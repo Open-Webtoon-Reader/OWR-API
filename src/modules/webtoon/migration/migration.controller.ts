@@ -61,9 +61,9 @@ export class MigrationController{
         this.migrationService.reDownloadEpisode(episodeId);
     }
 
-    // @Delete("s3")
-    // @ApiBearerAuth()
-    // async removeS3(){
-    //     this.migrationService.clearS3();
-    // }
+    @Delete("s3")
+    @ApiBearerAuth()
+    async removeS3(){
+        this.migrationService.clearS3();
+    }
 }
