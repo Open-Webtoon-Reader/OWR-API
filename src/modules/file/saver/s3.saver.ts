@@ -38,7 +38,11 @@ export class S3Saver implements Saver{
     async saveFile(data: Buffer, sum: string): Promise<void>{
         await this.createBucketIfNotExists();
         try{
-            await this.s3Client.putObject(this.bucketName, `${sum.substring(0, 2)}/${sum}.webp`, data);
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-expect-error
+            await this.s3Client.putObject(this.bucketName, `${sum.substring(0, 2)}/${sum}.webp`, data, {
+                "x-amz-storage-class": process.env.S3_STORAGE_CLASS
+            });
         }catch (e){
             console.log(`Error saving file ${sum}:`);
             console.log(e);
