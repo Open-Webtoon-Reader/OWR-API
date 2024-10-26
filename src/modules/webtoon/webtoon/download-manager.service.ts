@@ -9,6 +9,7 @@ import WebtoonModel from "./models/models/webtoon.model";
 import WebtoonDataModel from "./models/models/webtoon-data.model";
 import {HttpStatusCode} from "axios";
 import DownloadQueue from "../../../common/utils/models/download-queue";
+import {DownloadGateway} from "../../websocket/download.gateway";
 
 @Injectable()
 export class DownloadManagerService{
@@ -23,6 +24,7 @@ export class DownloadManagerService{
         private readonly webtoonParser: WebtoonParserService,
         private readonly webtoonDatabase: WebtoonDatabaseService,
         private readonly webtoonDownloader: WebtoonDownloaderService,
+        private readonly downloadGateway: DownloadGateway,
     ){
         this.downloadQueue = DownloadQueue.loadQueue();
         // If there are downloads in queue, start download
@@ -84,6 +86,7 @@ export class DownloadManagerService{
             if(!currentDownload)
                 return;
             this.logger.debug(`Downloading ${this.downloadQueue.getCurrentDownload().title} (${this.downloadQueue.getCurrentDownload().language}).`);
+            this.downloadGateway.onDownloadStart(currentDownload);
             if(!await this.webtoonDatabase.isWebtoonSaved(this.downloadQueue.getCurrentDownload().title, this.downloadQueue.getCurrentDownload().language)){
                 const webtoon: WebtoonModel = await this.webtoonParser.getWebtoonInfos(this.downloadQueue.getCurrentDownload());
                 const webtoonData: WebtoonDataModel = await this.webtoonDownloader.downloadWebtoon(webtoon);
@@ -94,12 +97,14 @@ export class DownloadManagerService{
             for(let i = startEpisode; i < epList.length; i++){
                 if(!this.downloadQueue.getCurrentDownload()) // If current download is cleared, stop downloading
                     break;
+                this.downloadGateway.onDownloadProgress(i / epList.length * 100);
                 const epImageLinks: string[] = await this.webtoonParser.getEpisodeLinks(this.downloadQueue.getCurrentDownload(), epList[i]);
                 const episodeData: EpisodeDataModel = await this.webtoonDownloader.downloadEpisode(epList[i], epImageLinks);
                 await this.webtoonDatabase.saveEpisode(currentDownload, epList[i], episodeData);
             }
         }
         this.downloadQueue.clear();
+        this.downloadGateway.onDownloadStart(null);
     }
 
     getCurrentDownload(): CachedWebtoonModel{
