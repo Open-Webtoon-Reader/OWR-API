@@ -4,6 +4,7 @@ import WebtoonDataModel from "./models/models/webtoon-data.model";
 import WebtoonModel from "./models/models/webtoon.model";
 import {Injectable, Logger} from "@nestjs/common";
 import {MiscService} from "../../misc/misc.service";
+import {DownloadGateway} from "../../websocket/download.gateway";
 
 @Injectable()
 export class WebtoonDownloaderService{
@@ -12,6 +13,7 @@ export class WebtoonDownloaderService{
 
     constructor(
         private readonly miscService: MiscService,
+        private readonly downloadGateway: DownloadGateway,
     ){}
 
     async downloadEpisode(episode: EpisodeModel, imageUrls: string[]): Promise<EpisodeDataModel>{
@@ -25,6 +27,7 @@ export class WebtoonDownloaderService{
             const elapsedSeconds = (Date.now() - startTime) / 1000;
             const imagesPerSecond = downloadedCount / elapsedSeconds;
             this.logger.debug(`Downloading ${downloadedCount} of ${imageUrls.length} images (${(imagesPerSecond).toFixed(2)} images/s)...`);
+            this.downloadGateway.onEpisodeProgress((downloadedCount / imageUrls.length) * 100);
         }, 1000);
 
         for (let i = 0; i < imageUrls.length; i++){
@@ -37,6 +40,7 @@ export class WebtoonDownloaderService{
 
         clearInterval(interval);
         this.logger.debug(`Downloaded ${downloadedCount}/${imageUrls.length} images in ${((Date.now() - startTime) / 1000).toFixed(2)} seconds.`);
+        this.downloadGateway.onEpisodeProgress(100);
 
         // Convert all images to webp
         const convertedImages: Buffer[] = await Promise.all(conversionPromises);

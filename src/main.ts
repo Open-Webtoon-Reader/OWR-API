@@ -12,6 +12,7 @@ import {SwaggerTheme, SwaggerThemeNameEnum} from "swagger-themes";
 import {LoggerMiddleware} from "./common/middlewares/logger.middleware";
 import {Logger} from "@nestjs/common";
 import {CustomValidationPipe} from "./common/pipes/custom-validation.pipe";
+import {AsyncApiDocumentBuilder, AsyncApiModule} from "nestjs-asyncapi";
 
 dotenv.config();
 
@@ -92,8 +93,8 @@ async function loadServer(server: NestFastifyApplication<RawServerDefault>, serv
 
     // Swagger
     const config = new DocumentBuilder()
-        .setTitle("Phoenix API")
-        .setDescription("Documentation for the Phoenix API")
+        .setTitle("OWR API")
+        .setDescription("Documentation for the OWR API")
         .setVersion(process.env.npm_package_version)
         .addBearerAuth()
         .build();
@@ -111,6 +112,21 @@ async function loadServer(server: NestFastifyApplication<RawServerDefault>, serv
         },
         customCss,
     });
+
+    // AsyncAPI
+    const asyncApiOptions = new AsyncApiDocumentBuilder()
+        .setTitle("OWR API")
+        .setDescription("Documentation for the OWR API")
+        .setVersion(process.env.npm_package_version)
+        .setDefaultContentType("application/json")
+        .addBearerAuth()
+        .addServer("owr-api", {
+            url: "http://localhost:4000",
+            protocol: "socket.io",
+        })
+        .build();
+    const asyncapiDocument = AsyncApiModule.createDocument(server, asyncApiOptions);
+    await AsyncApiModule.setup("async-api", server, asyncapiDocument);
 
     server.useGlobalPipes(new CustomValidationPipe());
 }

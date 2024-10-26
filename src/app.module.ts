@@ -9,6 +9,7 @@ import {MigrationModule} from "./modules/webtoon/migration/migration.module";
 import {ScheduleModule} from "@nestjs/schedule";
 import {UpdateModule} from "./modules/webtoon/update/update.module";
 import {ImageModule} from "./modules/webtoon/image/image.module";
+import {WebsocketModule} from "./modules/websocket/websocket.module";
 
 @Module({
     imports: [
@@ -24,6 +25,7 @@ import {ImageModule} from "./modules/webtoon/image/image.module";
         MigrationModule,
         UpdateModule,
         ImageModule,
+        WebsocketModule,
     ],
     controllers: [],
     providers: [
