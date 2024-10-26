@@ -3,7 +3,12 @@ import {Server} from "socket.io";
 import {AsyncApiSub} from "nestjs-asyncapi";
 import CachedWebtoonModel from "../webtoon/webtoon/models/models/cached-webtoon.model";
 
-@WebSocketGateway({namespace: "download"})
+@WebSocketGateway({
+    namespace: "download",
+    cors: {
+        origin: "*",
+    }
+})
 export class DownloadGateway{
 
     @WebSocketServer() socket: Server;
