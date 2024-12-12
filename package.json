@@ -2,7 +2,7 @@
   "name": "owr-api",
   "version": "1.0.0-beta",
   "description": "",
-  "author": "",
+  "author": "Xen0Xys",
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
@@ -10,8 +10,8 @@
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/main",
-    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix"
+    "start:prod": "node dist/src/app",
+    "lint": "eslint . --fix"
   },
   "dependencies": {
     "@fastify/helmet": "^11.1.1",
