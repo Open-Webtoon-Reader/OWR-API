@@ -333,15 +333,13 @@ export class WebtoonDatabaseService{
     }
 
     private checkWebtoonNews(webtoon: any){
-        // Mark isNew if webtoon is created in the last 7 days
-        const isNew: boolean = new Date().getTime() - new Date(webtoon.created_at).getTime() < 7 * 24 * 60 * 60 * 1000;
-        // Mark hasNewEpisodes if webtoon is updated in the last 1 day
-        const hasNewEpisodes: boolean = new Date().getTime() - new Date(webtoon.updated_at).getTime() < 2 * 24 * 60 * 60 * 1000;
+        const isNew: boolean = new Date().getTime() - new Date(webtoon.created_at).getTime() < 7 * 24 * 60 * 60 * 1000; // 7 days
+        const hasNewEpisodes: boolean = new Date().getTime() - new Date(webtoon.updated_at).getTime() < 24 * 60 * 60 * 1000; // 1 day
         return {isNew, hasNewEpisodes};
     }
 
     private checkEpisodeNews(episode: any){
-        return new Date().getTime() - new Date(episode.created_at).getTime() < 2 * 24 * 60 * 60 * 1000;
+        return new Date().getTime() - new Date(episode.created_at).getTime() < 24 * 60 * 60 * 1000; // 1 day
     }
 
     async getWebtoon(webtoonId: number){
