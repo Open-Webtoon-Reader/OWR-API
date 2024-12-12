@@ -1,10 +1,12 @@
-FROM node:21-alpine
+FROM node:22-slim
 
 WORKDIR /app
 
 COPY package*.json pnpm-lock.yaml ./
 COPY tsconfig.json ./
 COPY prisma ./prisma/
+
+RUN apt update -y && apt install -y openssl
 
 RUN npm install -g pnpm && pnpm install --frozen-lockfile
 
