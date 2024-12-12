@@ -13,16 +13,16 @@ export class DownloadGateway{
 
     @SubscribeMessage("episode/progress")
     public onEpisodeProgress(progress: number){
-        this.socket.emit("episode/progress", progress);
+        this.socket?.emit("episode/progress", progress);
     }
 
     @SubscribeMessage("progress")
     public onDownloadProgress(progress: number){
-        this.socket.emit("progress", progress);
+        this.socket?.emit("progress", progress);
     }
 
     @SubscribeMessage("start")
     public onDownloadStart(webtoon: CachedWebtoonModel){
-        this.socket.emit("start", webtoon);
+        this.socket?.emit("start", webtoon);
     }
 }
