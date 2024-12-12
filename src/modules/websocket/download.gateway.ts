@@ -6,10 +6,9 @@ import CachedWebtoonModel from "../webtoon/webtoon/models/models/cached-webtoon.
     namespace: "download",
     cors: {
         origin: "*",
-    }
+    },
 })
 export class DownloadGateway{
-
     @WebSocketServer() socket: Server;
 
     @SubscribeMessage("episode/progress")

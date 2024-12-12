@@ -5,5 +5,5 @@ export class ImageSumDto{
     @ApiProperty()
     @IsNotEmpty()
     @IsString()
-        sum: string;
+    sum: string;
 }

@@ -3,7 +3,6 @@ import {FastifyReply, FastifyRequest} from "fastify";
 
 @Injectable()
 export class LoggerMiddleware implements NestMiddleware{
-
     static logger: Logger = new Logger(LoggerMiddleware.name);
 
     use(req: FastifyRequest["raw"], res: FastifyReply["raw"], next: () => void){

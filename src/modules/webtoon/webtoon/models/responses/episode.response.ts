@@ -2,16 +2,18 @@ import {ApiProperty} from "@nestjs/swagger";
 
 export default class EpisodeResponse{
     @ApiProperty()
-        title: string;
+    title: string;
+
     @ApiProperty()
-        previousEpisodeId?: number;
+    previousEpisodeId?: number;
+
     @ApiProperty()
-        nextEpisodeId?: number;
+    nextEpisodeId?: number;
 
     constructor(
         title: string,
         previousEpisodeId?: number,
-        nextEpisodeId?: number
+        nextEpisodeId?: number,
     ){
         this.title = title;
         this.previousEpisodeId = previousEpisodeId;

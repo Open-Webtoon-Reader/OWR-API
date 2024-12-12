@@ -10,7 +10,6 @@ import {BucketItem} from "minio";
 
 @Injectable()
 export class FileService{
-
     private readonly saver: Saver;
     private readonly secondarySaver: Saver;
 
@@ -36,7 +35,7 @@ export class FileService{
             this.configService.get("S3_REGION"),
             this.configService.get("S3_ACCESS_KEY"),
             this.configService.get("S3_SECRET_KEY"),
-            this.configService.get("S3_BUCKET_NAME")
+            this.configService.get("S3_BUCKET_NAME"),
         );
     }
 
@@ -61,7 +60,7 @@ export class FileService{
                 stream.on("end", () => resolve(Buffer.concat(chunks)));
                 stream.on("error", reject);
             });
-        }catch(e){
+        }catch(_){
             throw new NotFoundException("Image not found");
         }
     }

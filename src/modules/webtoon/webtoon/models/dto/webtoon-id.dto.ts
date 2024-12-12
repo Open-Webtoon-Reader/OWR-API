@@ -5,5 +5,5 @@ export class WebtoonIdDto{
     @ApiProperty()
     @IsNotEmpty()
     @IsInt()
-        webtoonId: number;
+    webtoonId: number;
 }
