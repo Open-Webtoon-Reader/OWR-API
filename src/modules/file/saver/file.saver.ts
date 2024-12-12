@@ -3,7 +3,6 @@ import * as fs from "fs";
 import {createReadStream, ReadStream} from "fs";
 
 export class FileSaver implements Saver{
-
     private readonly uploadFolderName: string;
 
     constructor(uploadFolderName: string){
@@ -14,7 +13,7 @@ export class FileSaver implements Saver{
         const path = `./${this.uploadFolderName}/${sum.substring(0, 2)}`;
         if(!fs.existsSync(path)){
             fs.mkdirSync(path, {
-                recursive: true
+                recursive: true,
             });
         }
         fs.writeFileSync(`${path}/${sum}.webp`, data);

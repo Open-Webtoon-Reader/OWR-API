@@ -1,4 +1,5 @@
-enum WebtoonGenres {
+/* eslint-disable @/no-unused-vars */
+enum WebtoonGenres{
     DRAMA = "drama",
     FANTASY = "fantasy",
     COMEDY = "comedy",

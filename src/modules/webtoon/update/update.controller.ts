@@ -4,12 +4,10 @@ import {ApiBearerAuth, ApiResponse, ApiTags} from "@nestjs/swagger";
 import {AdminGuard} from "../admin/guard/admin.guard";
 import {HttpStatusCode} from "axios";
 
-
 @Controller("update")
 @ApiTags("Update")
 @UseGuards(AdminGuard)
 export class UpdateController{
-
     private readonly logger = new Logger(UpdateController.name);
 
     constructor(

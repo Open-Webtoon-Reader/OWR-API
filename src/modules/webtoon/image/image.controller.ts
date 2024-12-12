@@ -5,12 +5,10 @@ import {HttpStatusCode} from "axios";
 import {ImageSumDto} from "./models/dto/image-sum.dto";
 import {Throttle} from "@nestjs/throttler";
 
-
 @Controller("image")
 @ApiTags("Image")
 @Throttle({default: {limit: 400, ttl: 60000}})
 export class ImageController{
-
     constructor(
         private readonly webtoonDatabaseService: WebtoonDatabaseService,
     ){}

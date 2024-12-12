@@ -13,7 +13,7 @@ import {HttpStatusCode} from "axios";
 @UseGuards(AdminGuard)
 export class MigrationController{
     constructor(
-        private readonly migrationService: MigrationService
+        private readonly migrationService: MigrationService,
     ){}
 
     @Post("from")

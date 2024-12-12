@@ -8,12 +8,11 @@ import {DownloadGateway} from "../../websocket/download.gateway";
 
 @Injectable()
 export class WebtoonDownloaderService{
-
     private readonly logger = new Logger(WebtoonDownloaderService.name);
 
     constructor(
         private readonly miscService: MiscService,
-        private readonly downloadGateway: DownloadGateway,
+        private readonly downloadGatewayService: DownloadGateway,
     ){}
 
     async downloadEpisode(episode: EpisodeModel, imageUrls: string[]): Promise<EpisodeDataModel>{
@@ -27,10 +26,10 @@ export class WebtoonDownloaderService{
             const elapsedSeconds = (Date.now() - startTime) / 1000;
             const imagesPerSecond = downloadedCount / elapsedSeconds;
             this.logger.debug(`Downloading ${downloadedCount} of ${imageUrls.length} images (${(imagesPerSecond).toFixed(2)} images/s)...`);
-            this.downloadGateway.onEpisodeProgress((downloadedCount / imageUrls.length) * 100);
+            this.downloadGatewayService.onEpisodeProgress((downloadedCount / imageUrls.length) * 100);
         }, 1000);
 
-        for (let i = 0; i < imageUrls.length; i++){
+        for(let i = 0; i < imageUrls.length; i++){
             const url = imageUrls[i];
             const image = await this.miscService.downloadImage(url, episode.link);
             conversionPromises.push(this.miscService.convertImageToWebp(image));
@@ -40,14 +39,14 @@ export class WebtoonDownloaderService{
 
         clearInterval(interval);
         this.logger.debug(`Downloaded ${downloadedCount}/${imageUrls.length} images in ${((Date.now() - startTime) / 1000).toFixed(2)} seconds.`);
-        this.downloadGateway.onEpisodeProgress(100);
+        this.downloadGatewayService.onEpisodeProgress(100);
 
         // Convert all images to webp
         const convertedImages: Buffer[] = await Promise.all(conversionPromises);
         this.logger.debug(`Download complete for episode ${episode.number}!`);
         return {
             thumbnail,
-            images: convertedImages
+            images: convertedImages,
         } as EpisodeDataModel;
     }
 
@@ -59,7 +58,7 @@ export class WebtoonDownloaderService{
         downloadPromises.push(this.miscService.downloadImage(webtoon.banner.mobile));
         const images: Buffer[] = await Promise.all(downloadPromises);
         const conversionPromises: Promise<Buffer>[] = [];
-        for (let i = 0; i < images.length; i++)
+        for(let i = 0; i < images.length; i++)
             conversionPromises.push(this.miscService.convertImageToWebp(images[i]));
         const [thumbnail, background, top, mobile] = await Promise.all(conversionPromises);
         return {

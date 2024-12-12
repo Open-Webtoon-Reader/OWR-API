@@ -6,10 +6,8 @@ import * as sharp from "sharp";
 import WebtoonStarModel from "../webtoon/webtoon/models/models/webtoon-star.model";
 import axios, {AxiosInstance} from "axios";
 
-
 @Injectable()
 export class MiscService{
-
     private readonly axiosInstance: AxiosInstance;
 
     private readonly userAgents: string[] = [
@@ -61,8 +59,8 @@ export class MiscService{
             type: "nodebuffer",
             compression: "DEFLATE",
             compressionOptions: {
-                level: 9
-            }
+                level: 9,
+            },
         });
         const zipSum = this.getSum(zipBuffer);
         return [zipBuffer, zipSum];
@@ -91,8 +89,8 @@ export class MiscService{
         const response = await this.getAxiosInstance().get(url, {
             responseType: "arraybuffer",
             headers: {
-                "Referer": referer
-            }
+                Referer: referer,
+            },
         });
         return response.data as Buffer;
     }
@@ -101,7 +99,7 @@ export class MiscService{
         const webpImage: Buffer = await this.downloadImage(url);
         return await sharp(webpImage).resize(240, 240, {
             fit: "cover",
-            position: "center"
+            position: "center",
         }).toBuffer();
     }
 
@@ -120,7 +118,7 @@ export class MiscService{
         const parsed = parseFloat(copy) * multiplier;
         return {
             raw: stars,
-            value: parsed
+            value: parsed,
         } as WebtoonStarModel;
     }
 

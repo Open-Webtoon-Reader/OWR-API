@@ -2,15 +2,19 @@ import {ApiProperty} from "@nestjs/swagger";
 
 export default class EpisodeLineModel{
     @ApiProperty()
-        id: number;
+    id: number;
+
     @ApiProperty()
-        title: string;
+    title: string;
+
     @ApiProperty()
-        number: number;
+    number: number;
+
     @ApiProperty()
-        isNew: boolean;
+    isNew: boolean;
+
     @ApiProperty()
-        thumbnail: string;
+    thumbnail: string;
 
     constructor(
         id: number,

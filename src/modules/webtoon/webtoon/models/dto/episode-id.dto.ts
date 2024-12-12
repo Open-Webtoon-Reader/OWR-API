@@ -5,5 +5,5 @@ export class EpisodeIdDto{
     @ApiProperty()
     @IsNotEmpty()
     @IsInt()
-        episodeId: number;
+    episodeId: number;
 }
