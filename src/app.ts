@@ -1,5 +1,4 @@
 import {FastifyAdapter, NestFastifyApplication} from "@nestjs/platform-fastify";
-import {CustomValidationPipe} from "./common/pipes/custom-validation.pipe";
 import {LoggerMiddleware} from "./common/middlewares/logger.middleware";
 import {SwaggerTheme, SwaggerThemeNameEnum} from "swagger-themes";
 import {DocumentBuilder, SwaggerModule} from "@nestjs/swagger";
@@ -57,7 +56,7 @@ async function loadServer(server: NestFastifyApplication){
     const document = SwaggerModule.createDocument(server, config);
     const theme = new SwaggerTheme();
     const customCss = theme.getBuffer(SwaggerThemeNameEnum.DARK);
-    SwaggerModule.setup("api", server, document, {
+    SwaggerModule.setup("", server, document, {
         swaggerOptions: {
             filter: true,
             displayRequestDuration: true,
@@ -68,8 +67,6 @@ async function loadServer(server: NestFastifyApplication){
         },
         customCss,
     });
-
-    server.useGlobalPipes(new CustomValidationPipe());
 }
 
 bootstrap();

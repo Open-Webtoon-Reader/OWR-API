@@ -1,8 +1,6 @@
-import {BadRequestException, Logger, ValidationError, ValidationPipe} from "@nestjs/common";
+import {BadRequestException, ValidationError, ValidationPipe} from "@nestjs/common";
 
 export class CustomValidationPipe extends ValidationPipe{
-    private readonly logger = new Logger(CustomValidationPipe.name);
-
     constructor(){
         super({
             transform: true,
@@ -19,7 +17,6 @@ export class CustomValidationPipe extends ValidationPipe{
                 property: error.property,
                 constraints: error.constraints,
             }));
-            // this.logger.error(messages);
             return new BadRequestException(messages);
         };
     }
