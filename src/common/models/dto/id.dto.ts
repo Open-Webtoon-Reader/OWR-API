@@ -5,5 +5,5 @@ export class IdDto{
     @ApiProperty()
     @IsNotEmpty()
     @IsInt()
-        id: number;
+    id: number;
 }

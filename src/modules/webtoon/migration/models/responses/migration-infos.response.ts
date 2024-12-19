@@ -2,9 +2,10 @@ import {ApiProperty} from "@nestjs/swagger";
 
 export default class MigrationInfosResponse{
     @ApiProperty()
-        imageCount: number;
+    imageCount: number;
+
     @ApiProperty()
-        chunkNumber: number;
+    chunkNumber: number;
 
     constructor(imageCount: number, chunkNumber: number){
         this.imageCount = imageCount;

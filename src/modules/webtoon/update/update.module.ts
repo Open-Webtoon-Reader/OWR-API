@@ -4,10 +4,9 @@ import {UpdateController} from "./update.controller";
 import {MiscModule} from "../../misc/misc.module";
 import {WebtoonModule} from "../webtoon/webtoon.module";
 
-
 @Module({
     providers: [UpdateService],
     controllers: [UpdateController],
-    imports: [MiscModule, WebtoonModule]
+    imports: [MiscModule, WebtoonModule],
 })
 export class UpdateModule{}

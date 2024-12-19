@@ -8,7 +8,7 @@ export default class EpisodeModel{
         link: string,
         thumbnail: string,
         title: string,
-        number: number
+        number: number,
     ){
         this.link = link;
         this.thumbnail = thumbnail;

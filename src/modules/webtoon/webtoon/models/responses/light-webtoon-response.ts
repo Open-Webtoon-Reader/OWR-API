@@ -2,21 +2,28 @@ import {ApiProperty} from "@nestjs/swagger";
 
 export default class LightWebtoonResponse{
     @ApiProperty()
-        id: number;
+    id: number;
+
     @ApiProperty()
-        title: string;
+    title: string;
+
     @ApiProperty()
-        language: string;
+    language: string;
+
     @ApiProperty()
-        author: string;
+    author: string;
+
     @ApiProperty()
-        genres: string[];
+    genres: string[];
+
     @ApiProperty()
-        isNew: boolean;
+    isNew: boolean;
+
     @ApiProperty()
-        hasNewEpisodes: boolean;
+    hasNewEpisodes: boolean;
+
     @ApiProperty()
-        thumbnail: string; // As dataurl
+    thumbnail: string; // As dataurl
 
     constructor(
         id: number,

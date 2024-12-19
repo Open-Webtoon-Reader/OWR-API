@@ -4,6 +4,6 @@ import {WebtoonModule} from "../webtoon/webtoon/webtoon.module";
 
 @Module({
     providers: [WebtoonUpdateTask],
-    imports: [WebtoonModule]
+    imports: [WebtoonModule],
 })
 export class TaskModule{}
