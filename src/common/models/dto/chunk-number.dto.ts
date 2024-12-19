@@ -5,5 +5,5 @@ export class ChunkNumberDto{
     @ApiProperty({required: false})
     @IsOptional()
     @IsInt()
-        chunk: number;
+    chunk: number;
 }

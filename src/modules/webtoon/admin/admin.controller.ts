@@ -6,12 +6,10 @@ import {HttpStatusCode} from "axios";
 import CachedWebtoonModel from "../webtoon/models/models/cached-webtoon.model";
 import {AdminGuard} from "./guard/admin.guard";
 
-
 @Controller("admin")
 @ApiTags("Admin")
 @UseGuards(AdminGuard)
 export class AdminController{
-
     constructor(
         private readonly downloadManagerService: DownloadManagerService,
     ){}

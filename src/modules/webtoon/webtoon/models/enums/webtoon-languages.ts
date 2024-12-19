@@ -1,4 +1,5 @@
-enum WebtoonLanguages {
+/* eslint-disable @/no-unused-vars */
+enum WebtoonLanguages{
     FR = "fr",
     EN = "en",
     ES = "es",

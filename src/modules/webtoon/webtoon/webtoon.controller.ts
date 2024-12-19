@@ -15,7 +15,6 @@ import RandomThumbnailResponse from "./models/responses/random-thumbnail.respons
 @ApiTags("Webtoon")
 @Throttle({default: {limit: 15, ttl: 60000}})
 export class WebtoonController{
-
     constructor(
         private readonly webtoonDatabaseService: WebtoonDatabaseService,
     ){}

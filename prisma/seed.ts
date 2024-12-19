@@ -9,11 +9,13 @@ dotenv.config();
 const prisma = new PrismaClient();
 
 async function main(){
+    const gStart = Date.now();
     const webtoon_genres_values = Object.values(WebtoonGenres).map(value => ({name: value}));
     await seed(prisma.genres, webtoon_genres_values);
 
     const image_types_values = Object.values(ImageTypes).map(value => ({name: value}));
     await seed(prisma.imageTypes, image_types_values);
+    console.log(`\n✅  Seeding completed ! (${Date.now() - gStart}ms)`);
 }
 
 async function seed(table: any, data: any[]){

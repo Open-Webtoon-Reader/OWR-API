@@ -2,12 +2,10 @@ import {Injectable} from "@nestjs/common";
 import {Cron} from "@nestjs/schedule";
 import {DownloadManagerService} from "../webtoon/webtoon/download-manager.service";
 
-
 @Injectable()
 export class WebtoonUpdateTask{
-
     constructor(
-        private readonly downloadManagerService: DownloadManagerService
+        private readonly downloadManagerService: DownloadManagerService,
     ){}
 
     @Cron("0 0 17 * * *")

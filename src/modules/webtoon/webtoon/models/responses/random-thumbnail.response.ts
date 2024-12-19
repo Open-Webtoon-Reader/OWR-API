@@ -2,7 +2,7 @@ import {ApiProperty} from "@nestjs/swagger";
 
 export default class RandomThumbnailResponse{
     @ApiProperty()
-        thumbnail: string;
+    thumbnail: string;
 
     constructor(
         thumbnail: string,

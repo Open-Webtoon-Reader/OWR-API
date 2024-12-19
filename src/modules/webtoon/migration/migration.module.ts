@@ -8,6 +8,6 @@ import {FileModule} from "../../file/file.module";
 @Module({
     providers: [MigrationService],
     controllers: [MigrationController],
-    imports: [WebtoonModule, MiscModule, FileModule]
+    imports: [WebtoonModule, MiscModule, FileModule],
 })
 export class MigrationModule{}

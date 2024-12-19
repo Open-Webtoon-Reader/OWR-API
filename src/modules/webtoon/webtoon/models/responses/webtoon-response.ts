@@ -3,11 +3,13 @@ import LightWebtoonResponse from "./light-webtoon-response";
 
 export default class WebtoonResponse extends LightWebtoonResponse{
     @ApiProperty()
-        backgroundBanner: string;
+    backgroundBanner: string;
+
     @ApiProperty()
-        topBanner: string;
+    topBanner: string;
+
     @ApiProperty()
-        mobileBanner: string;
+    mobileBanner: string;
 
     constructor(
         id: number,

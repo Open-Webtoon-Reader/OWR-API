@@ -15,7 +15,6 @@ import {WebtoonDownloaderService} from "../webtoon/webtoon-downloader.service";
 
 @Injectable()
 export class MigrationService{
-
     private readonly logger = new Logger(MigrationService.name);
 
     constructor(
@@ -32,9 +31,9 @@ export class MigrationService{
         // Get migration infos using axios from the url
         const response = await axios.get(url + "/api/v1/migration/infos", {
             headers: {
-                "Authorization": "Bearer " + adminKey
+                Authorization: "Bearer " + adminKey,
             },
-            httpsAgent: new https.Agent({rejectUnauthorized: false})
+            httpsAgent: new https.Agent({rejectUnauthorized: false}),
         });
         const migrationInfos: MigrationInfosResponse = response.data;
         // Migrate the data
@@ -78,13 +77,13 @@ export class MigrationService{
     }
 
     private async downloadFile(fileUrl: string, adminKey: string): Promise<Buffer>{
-        try {
+        try{
             const response = await axios.get(fileUrl, {
                 responseType: "stream",
                 headers: {
-                    "Authorization": "Bearer " + adminKey
+                    Authorization: "Bearer " + adminKey,
                 },
-                httpsAgent: new https.Agent({rejectUnauthorized: false})
+                httpsAgent: new https.Agent({rejectUnauthorized: false}),
             });
 
             return new Promise<Buffer>((resolve, reject) => {
@@ -101,7 +100,7 @@ export class MigrationService{
                     reject(error);
                 });
             });
-        } catch (error){
+        }catch(error){
             console.error(`Error downloading the file: ${error}`);
             throw error;
         }
@@ -120,16 +119,16 @@ export class MigrationService{
                 take: dbImageBatchSize,
                 select: {
                     id: true,
-                    sum: true
-                }
+                    sum: true,
+                },
             });
             const imageSums = images.map(image => image.sum);
             for(let j = 0; j < imageSums.length; j += s3BatchSize){
                 try{
                     this.logger.debug(`Uploading images from ${j} to ${j + s3BatchSize}`);
                     const batch = imageSums.slice(j, j + s3BatchSize);
-                    await Promise.all(batch.map(async(sum) => s3Saver.saveFile(await this.fileService.loadImage(sum), sum)));
-                }catch (error){
+                    await Promise.all(batch.map(async sum => s3Saver.saveFile(await this.fileService.loadImage(sum), sum)));
+                }catch(error){
                     this.logger.error(`Error uploading images from ${j} to ${j + s3BatchSize}: ${error}`);
                     await new Promise(resolve => setTimeout(resolve, 10000));
                     j -= s3BatchSize;
@@ -151,16 +150,16 @@ export class MigrationService{
                 take: dbImageBatchSize,
                 select: {
                     id: true,
-                    sum: true
-                }
+                    sum: true,
+                },
             });
             const imageSums = images.map(image => image.sum);
             for(let j = 0; j < imageSums.length; j += localBatchSize){
-                try {
+                try{
                     this.logger.debug(`Saving images from ${j} to ${j + localBatchSize}`);
                     const batch = imageSums.slice(j, j + localBatchSize);
-                    await Promise.all(batch.map(async(sum) => fileSaver.saveFile(await this.fileService.loadImage(sum), sum)));
-                }catch (error){
+                    await Promise.all(batch.map(async sum => fileSaver.saveFile(await this.fileService.loadImage(sum), sum)));
+                }catch(error){
                     this.logger.error(`Error saving images from ${j} to ${j + localBatchSize}: ${error}`);
                     await new Promise(resolve => setTimeout(resolve, 10000));
                     j -= localBatchSize;
@@ -178,13 +177,13 @@ export class MigrationService{
     async reDownloadEpisode(episodeId: number){
         const episode = await this.prismaService.episodes.findUnique({
             where: {
-                id: episodeId
-            }
+                id: episodeId,
+            },
         });
         const webtoon = await this.prismaService.webtoons.findUnique({
             where: {
-                id: episode.webtoon_id
-            }
+                id: episode.webtoon_id,
+            },
         });
         const webtoonModel = this.webtoonParserService.findWebtoon(webtoon.title, webtoon.language);
         const episodeModels = await this.webtoonParserService.getEpisodes(webtoonModel);
