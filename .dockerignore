@@ -4,6 +4,7 @@ pnpm-debug.log
 .DS_Store
 .git
 .gitignore
-.cache
 dist
 .env
+.cache
+images
