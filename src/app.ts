@@ -9,30 +9,29 @@ import {Logger} from "@nestjs/common";
 import * as process from "process";
 import * as dotenv from "dotenv";
 import {FastifyListenOptions} from "fastify/types/instance";
+import {RawServerDefault} from "fastify";
 
 dotenv.config();
 
 const logger: Logger = new Logger("App");
 
 async function bootstrap(){
-    const app = await NestFactory.create<NestFastifyApplication>(
+    const app: NestFastifyApplication<RawServerDefault> = await NestFactory.create<NestFastifyApplication>(
         AppModule,
         new FastifyAdapter({exposeHeadRoutes: true}),
     );
     await loadServer(app);
-    const port = process.env.PORT || 4000;
     // @ts-ignore
     await app.listen({
-        port: port,
+        port: process.env.PORT || 4000,
         host: "0.0.0.0",
     } as FastifyListenOptions);
     app.enableShutdownHooks();
-    logger.log(`Listening on http://0.0.0.0:${port}`);
 }
 
 async function loadServer(server: NestFastifyApplication){
     // Config
-    server.setGlobalPrefix(process.env.PREFIX);
+    server.setGlobalPrefix(process.env.PREFIX || "");
     server.enableCors({
         origin: "*",
     });
@@ -56,7 +55,7 @@ async function loadServer(server: NestFastifyApplication){
     const document = SwaggerModule.createDocument(server, config);
     const theme = new SwaggerTheme();
     const customCss = theme.getBuffer(SwaggerThemeNameEnum.DARK);
-    SwaggerModule.setup("", server, document, {
+    SwaggerModule.setup(process.env.PREFIX || "", server, document, {
         swaggerOptions: {
             filter: true,
             displayRequestDuration: true,
@@ -69,4 +68,6 @@ async function loadServer(server: NestFastifyApplication){
     });
 }
 
-bootstrap();
+bootstrap().then(() => {
+    logger.log(`Listening on http://0.0.0.0:${process.env.PORT || 4000}`);
+});
