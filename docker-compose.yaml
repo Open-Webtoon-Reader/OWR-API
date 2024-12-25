@@ -11,7 +11,6 @@ services:
       - SERVICE_FQDN_OWR_4000
       - NODE_ENV=production
       - DATABASE_URL=postgres://postgres:${POSTGRES_PASSWORD}@postgres:5432/postgres
-      - PREFIX=${PREFIX:-api/v1/}
       - FILESYSTEM=${FILESYSTEM:-local}
       - ADMIN_KEY=${ADMIN_KEY}
       - S3_ENDPOINT=${S3_ENDPOINT}
