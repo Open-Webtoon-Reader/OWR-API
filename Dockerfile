@@ -7,7 +7,7 @@ RUN apk add --no-cache openssl
 COPY package*.json pnpm-lock.yaml ./
 COPY tsconfig.json ./
 
-RUN corepack enable && pnpm install --frozen-lockfile
+RUN npm install -g corepack@latest && corepack enable && pnpm install --frozen-lockfile
 
 COPY prisma ./prisma/
 RUN pnpm dlx prisma generate
