@@ -16,7 +16,7 @@ export default class WebtoonModel extends CachedWebtoonModel{
         id: string,
         language: string,
         epCount: number,
-        banner: WebtoonBannerModel
+        banner: WebtoonBannerModel,
     ){
         super(title, author, link, thumbnail, stars, genres, id, language);
         this.epCount = epCount;

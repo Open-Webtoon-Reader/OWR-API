@@ -18,7 +18,7 @@ export default class CachedWebtoonModel{
         stars: WebtoonStarModel,
         genres: string[],
         id: string,
-        language: string
+        language: string,
     ){
         this.title = title;
         this.author = author;

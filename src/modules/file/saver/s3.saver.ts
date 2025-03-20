@@ -5,7 +5,6 @@ import {ReadStream} from "fs";
 import {BucketItem} from "minio";
 
 export class S3Saver implements Saver{
-
     private readonly s3Client: Minio.Client;
     private readonly bucketName: string;
     private bucketExists: boolean = false;
@@ -29,7 +28,7 @@ export class S3Saver implements Saver{
             const bucketExists = await this.s3Client.bucketExists(this.bucketName);
             if(!bucketExists)
                 await this.s3Client.makeBucket(this.bucketName);
-        }catch (e){
+        }catch(e){
             console.log(e);
         }
         this.bucketExists = true;
@@ -38,16 +37,16 @@ export class S3Saver implements Saver{
     async saveFile(data: Buffer, sum: string): Promise<void>{
         await this.createBucketIfNotExists();
         try{
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-expect-error
+            // @ts-ignore
             await this.s3Client.putObject(this.bucketName, `${sum.substring(0, 2)}/${sum}.webp`, data, {
-                "x-amz-storage-class": process.env.S3_STORAGE_CLASS
+                "x-amz-storage-class": process.env.S3_STORAGE_CLASS,
             });
-        }catch (e){
+        }catch(e){
             console.log(`Error saving file ${sum}:`);
             console.log(e);
         }
     }
+
     async getFile(sum: string): Promise<ReadStream>{
         await this.createBucketIfNotExists();
         const readable: Readable = await this.s3Client.getObject(this.bucketName, `${sum.substring(0, 2)}/${sum}.webp`);
@@ -62,8 +61,7 @@ export class S3Saver implements Saver{
     async clearBucket(){
         const objectsList = [];
 
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
+        // @ts-ignore
         const objectsStream = this.s3Client.listObjects(this.bucketName, "", true, {IncludeVersion: true});
         objectsStream.on("data", function(obj){
             objectsList.push(obj);
@@ -74,13 +72,13 @@ export class S3Saver implements Saver{
         objectsStream.on("end", async() => {
             const batchSize = parseInt(process.env.S3_BATCH_SIZE);
             console.log(`Preparing to clear ${objectsList.length} objects from the bucket`);
-            for (let i = 0; i < objectsList.length; i += batchSize){
+            for(let i = 0; i < objectsList.length; i += batchSize){
                 const batch = objectsList.slice(i, i + batchSize);
                 console.log(`Clearing batch ${Math.floor(i / batchSize) + 1}: ${batch.length} objects`);
-                try {
+                try{
                     await this.s3Client.removeObjects(this.bucketName, batch);
                     console.log(`Batch ${Math.floor(i / batchSize) + 1} cleared successfully`);
-                } catch (error){
+                }catch(error){
                     console.error(`Error clearing batch ${Math.floor(i / batchSize) + 1}:`, error);
                 }
             }
@@ -92,7 +90,7 @@ export class S3Saver implements Saver{
         const objectsList = [];
         const objectsStream = this.s3Client.listObjects(this.bucketName, "", true);
         return new Promise<BucketItem[]>((resolve, reject) => {
-            objectsStream.on("data", (obj) => objectsList.push(obj));
+            objectsStream.on("data", obj => objectsList.push(obj));
             objectsStream.on("end", () => resolve(objectsList));
             objectsStream.on("error", reject);
         });

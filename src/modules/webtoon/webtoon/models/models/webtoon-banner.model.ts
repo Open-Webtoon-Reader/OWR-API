@@ -6,7 +6,7 @@ export default class WebtoonBannerModel{
     constructor(
         background: string,
         top: string,
-        mobile: string
+        mobile: string,
     ){
         this.background = background;
         this.top = top;
