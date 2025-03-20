@@ -9,6 +9,7 @@ import EpisodeModel from "./models/models/episode.model";
 import {WebtoonProvider} from "./providers/webtoon.provider";
 import WebtoonProviderEnum from "./models/enums/webtoon-provider.enum";
 import WebtoonModel from "./models/models/webtoon.model";
+import {WebtoonCanvasProvider} from "./providers/webtoon-canvas.provider";
 
 @Injectable()
 export class WebtoonParserService{
@@ -18,6 +19,7 @@ export class WebtoonParserService{
     constructor(
         private readonly miscService: MiscService,
         private readonly webtoonProvider: WebtoonProvider,
+        private readonly webtoonCanvasProvider: WebtoonCanvasProvider,
     ){}
 
     clearCache(): void{
@@ -38,11 +40,14 @@ export class WebtoonParserService{
         this.logger.verbose("Loading webtoon list...");
         // Generate and save cache
         const webtoons: Record<string, CachedWebtoonModel[]> = await this.webtoonProvider.parse();
+        const webtoonCanvas: Record<string, CachedWebtoonModel[]> = await this.webtoonCanvasProvider.parse();
         for(const language of Object.values(WebtoonLanguages)){
             this.logger.verbose(`Loading webtoons for language: ${language}`);
+            if(!webtoonCanvas[language])
+                continue;
             if(!this.webtoons[language])
                 this.webtoons[language] = [];
-            this.webtoons[language] = [...this.webtoons[language], ...webtoons[language]];
+            this.webtoons[language] = [...this.webtoons[language], ...webtoons[language], ...webtoonCanvas[language]];
         }
         const webtoonCount = Object.values(this.webtoons)
             .reduce((acc, val: any) => acc + val.length, 0);
@@ -56,6 +61,8 @@ export class WebtoonParserService{
         switch (webtoon.provider){
             case WebtoonProviderEnum.WEBTOON:
                 return this.webtoonProvider.getWebtoonInfos(webtoon);
+            case WebtoonProviderEnum.WEBTOON_CANVAS:
+                return this.webtoonCanvasProvider.getWebtoonInfos(webtoon);
         }
     }
 
@@ -63,6 +70,8 @@ export class WebtoonParserService{
         switch (webtoon.provider){
             case WebtoonProviderEnum.WEBTOON:
                 return this.webtoonProvider.getEpisodes(webtoon);
+            case WebtoonProviderEnum.WEBTOON_CANVAS:
+                return this.webtoonCanvasProvider.getEpisodes(webtoon);
         }
     }
 
@@ -70,6 +79,8 @@ export class WebtoonParserService{
         switch (webtoon.provider){
             case WebtoonProviderEnum.WEBTOON:
                 return this.webtoonProvider.getEpisodeLinks(webtoon, episode);
+            case WebtoonProviderEnum.WEBTOON_CANVAS:
+                return this.webtoonCanvasProvider.getEpisodeLinks(webtoon, episode);
         }
     }
 

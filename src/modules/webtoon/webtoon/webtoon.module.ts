@@ -8,11 +8,12 @@ import {MiscModule} from "../../misc/misc.module";
 import {FileModule} from "../../file/file.module";
 import {WebsocketModule} from "../../websocket/websocket.module";
 import {WebtoonProvider} from "./providers/webtoon.provider";
+import {WebtoonCanvasProvider} from "./providers/webtoon-canvas.provider";
 
 @Module({
     imports: [MiscModule, FileModule, WebsocketModule],
     controllers: [WebtoonController],
-    providers: [WebtoonProvider, WebtoonParserService, WebtoonDownloaderService, WebtoonDatabaseService, DownloadManagerService],
+    providers: [WebtoonCanvasProvider, WebtoonProvider, WebtoonParserService, WebtoonDownloaderService, WebtoonDatabaseService, DownloadManagerService],
     exports: [DownloadManagerService, WebtoonDatabaseService, WebtoonParserService, WebtoonDownloaderService],
 })
 export class WebtoonModule{}

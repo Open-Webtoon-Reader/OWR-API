@@ -2,8 +2,6 @@ import {JSDOM} from "jsdom";
 import {Injectable, Logger, NotFoundException} from "@nestjs/common";
 import {MiscService} from "src/modules/misc/misc.service";
 import CachedWebtoonModel from "../models/models/cached-webtoon.model";
-import WebtoonLanguages from "../models/enums/webtoon-languages";
-import WebtoonGenres from "../models/enums/webtoon-genres";
 import WebtoonModel from "../models/models/webtoon.model";
 import WebtoonBannerModel from "../models/models/webtoon-banner.model";
 import EpisodeModel from "../models/models/episode.model";
@@ -12,6 +10,15 @@ import WebtoonProviderEnum from "../models/enums/webtoon-provider.enum";
 @Injectable()
 export class WebtoonProvider{
     private readonly logger: Logger = new Logger(WebtoonProvider.name);
+    private readonly languages: string[] = ["fr", "en", "es", "zh-hant", "th", "de", "id"];
+    private readonly genres: string[] = [
+        "drama", "fantasy", "comedy", "action", "slice_of_life", "romance",
+        "super_hero", "thriller", "sports", "sf", "horror", "tiptoon",
+        "local", "school", "martial_arts", "bl_gl", "romance_m", "time_slip",
+        "city_office", "mystery", "heartwarming", "shonen", "eastern_palace",
+        "web_novel", "western_palace", "adaptation", "supernatural",
+        "historical", "romantic_fantasy",
+    ];
 
     constructor(
         private readonly miscService: MiscService,
@@ -19,21 +26,21 @@ export class WebtoonProvider{
 
     async parse(): Promise<Record<string, CachedWebtoonModel[]>>{
         let webtoons: Record<string, CachedWebtoonModel[]> = {};
-        this.logger.verbose("Loading webtoon list...");
+        this.logger.verbose("(Webtoon) Loading webtoon list...");
         // Generate and save cache
-        for(const language of Object.values(WebtoonLanguages) as string[]){
-            this.logger.verbose(`Loading webtoons for language: ${language}`);
+        for(const language of this.languages){
+            this.logger.verbose(`(Webtoon) Loading webtoons for language: ${language}`);
             webtoons[language] = await this.getWebtoonsFromLanguage(language);
         }
         const webtoonCount = Object.values(webtoons).reduce((acc, val: any) => acc + val.length, 0);
-        this.logger.verbose(`Loaded ${webtoonCount} webtoons!`);
+        this.logger.verbose(`(Webtoon) Loaded ${webtoonCount} webtoons!`);
         return webtoons;
     }
 
     private async getWebtoonsFromLanguage(language: string): Promise<CachedWebtoonModel[]>{
         const languageWebtoons: CachedWebtoonModel[] = [];
         const promises: Promise<CachedWebtoonModel[]>[] = [];
-        for(const genre of Object.values(WebtoonGenres) as string[])
+        for(const genre of this.genres)
             promises.push(this.getWebtoonsFromGenre(language, genre));
         const genreResults = await Promise.all(promises);
         for(const webtoons of genreResults)
