@@ -99,7 +99,7 @@ export class DownloadManagerService{
                 this.downloadGatewayService.onDownloadProgress(i / epList.length * 100);
                 const epImageLinks: string[] = await this.webtoonParserService.getEpisodeLinks(this.downloadQueue.getCurrentDownload(), epList[i]);
                 const episodeData: EpisodeDataModel = await this.webtoonDownloaderService.downloadEpisode(epList[i], epImageLinks);
-                await this.webtoonDatabaseService.saveEpisode(currentDownload, epList[i], episodeData);
+                await this.webtoonDatabaseService.saveEpisode(currentDownload, epList[i], episodeData, i + 1);
             }
         }
         this.downloadQueue.clear();

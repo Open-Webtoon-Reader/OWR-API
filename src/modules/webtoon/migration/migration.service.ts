@@ -190,7 +190,7 @@ export class MigrationService{
         const episodeModel = episodeModels.find(episodeModel => episodeModel.number === episode.number);
         const imageUrls = await this.webtoonParserService.getEpisodeLinks(webtoonModel, episodeModel);
         const episodeData = await this.webtoonDownloaderService.downloadEpisode(episodeModel, imageUrls);
-        await this.webtoonDatabaseService.saveEpisode(webtoonModel, episodeModel, episodeData, true);
+        await this.webtoonDatabaseService.saveEpisode(webtoonModel, episodeModel, episodeData, episodeModel.number, true);
         console.log(`Episode ${episode.number} of ${webtoon.title} re-downloaded!`);
     }
 }

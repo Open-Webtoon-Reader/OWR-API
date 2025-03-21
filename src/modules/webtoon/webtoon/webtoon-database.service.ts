@@ -27,7 +27,7 @@ export class WebtoonDatabaseService{
         private readonly configService: ConfigService,
     ){}
 
-    async saveEpisode(webtoon: CachedWebtoonModel, episode: EpisodeModel, episodeData: EpisodeDataModel, force: boolean = false): Promise<void>{
+    async saveEpisode(webtoon: CachedWebtoonModel, episode: EpisodeModel, episodeData: EpisodeDataModel, index: number, force: boolean = false): Promise<void>{
         this.logger.debug(`Saving episode ${episode.number}...`);
         const dbWebtoon = await this.prismaService.webtoons.findFirst({
             where: {
@@ -76,7 +76,7 @@ export class WebtoonDatabaseService{
                 const dbEpisode = await tx.episodes.findFirst({
                     where: {
                         webtoon_id: dbWebtoon.id,
-                        number: episode.number,
+                        number: index,
                     },
                 });
                 if(dbEpisode){
@@ -95,7 +95,7 @@ export class WebtoonDatabaseService{
             const dbEpisode = await tx.episodes.create({
                 data: {
                     title: episode.title,
-                    number: episode.number,
+                    number: index,
                     webtoon_id: dbWebtoon.id,
                     thumbnail_id: dbThumbnail.id,
                 },
