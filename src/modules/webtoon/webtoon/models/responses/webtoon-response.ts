@@ -3,13 +3,13 @@ import LightWebtoonResponse from "./light-webtoon-response";
 
 export default class WebtoonResponse extends LightWebtoonResponse{
     @ApiProperty()
-    backgroundBanner: string;
+    backgroundBanner?: string;
 
     @ApiProperty()
-    topBanner: string;
+    topBanner?: string;
 
     @ApiProperty()
-    mobileBanner: string;
+    mobileBanner?: string;
 
     constructor(
         id: number,
@@ -20,9 +20,9 @@ export default class WebtoonResponse extends LightWebtoonResponse{
         isNew: boolean,
         hasNewEpisodes: boolean,
         thumbnail: string,
-        backgroundBanner: string,
-        topBanner: string,
-        mobileBanner: string,
+        backgroundBanner?: string,
+        topBanner?: string,
+        mobileBanner?: string,
     ){
         super(id, title, language, author, genres, isNew, hasNewEpisodes, thumbnail);
         this.backgroundBanner = backgroundBanner;

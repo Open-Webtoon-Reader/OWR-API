@@ -378,9 +378,9 @@ export class WebtoonDatabaseService{
             isNew,
             hasNewEpisodes,
             webtoon.thumbnail.sum,
-            webtoon.background_banner.sum,
-            webtoon.top_banner.sum,
-            webtoon.mobile_banner.sum,
+            webtoon.background_banner?.sum,
+            webtoon.top_banner?.sum,
+            webtoon.mobile_banner?.sum,
         );
     }
 
