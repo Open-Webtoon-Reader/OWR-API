@@ -54,6 +54,11 @@ export class WebtoonCanvasProvider{
         const url = `https://www.webtoons.com/${language}/canvas/list?genreTab=${genre.toUpperCase()}&page=999999999`;
         const response = await this.miscService.getAxiosInstance().get(url);
         const document = new JSDOM(response.data).window.document;
+        // Check if page is ALL
+        const header = document.querySelector("ul#_genreTabList").querySelectorAll("li")[1].querySelector("a");
+        if(header.ariaCurrent !== "false")
+            return 0;
+        // Fetch page count
         const lastLink = document.querySelector("div.paginate").querySelector("a:last-of-type");
         if(!lastLink) throw new NotFoundException(`No pagination found for genre: ${genre}`);
         const lastSpan = lastLink.querySelector("span");
@@ -90,7 +95,7 @@ export class WebtoonCanvasProvider{
                 const batchResults: CachedWebtoonModel[][] = await Promise.all(batchPromises);
                 for(const page of batchResults)
                     webtoons.push(...page);
-                await new Promise(resolve => setTimeout(resolve, this.miscService.randomInt(2000, 2500)));
+                await new Promise(resolve => setTimeout(resolve, this.miscService.randomInt(2300, 2700)));
                 batchStart += currentBatchSize;
             }catch(e){
                 this.logger.error(`(Webtoon Canvas) [${language}] Error while loading webtoons from genre: ${genre} - ${e.message}`);
