@@ -26,14 +26,17 @@ export class WebtoonCanvasProvider{
     ){}
 
     async parse(): Promise<Record<string, CachedWebtoonModel[]>>{
-        let webtoons: Record<string, CachedWebtoonModel[]> = {};
         this.logger.verbose("(Webtoon) Loading webtoon list...");
-        // Generate and save cache
-        for(const language of this.languages){
-            this.logger.verbose(`(Webtoon Canvas) Loading webtoons for language: ${language}`);
-            webtoons[language] = await this.getWebtoonsFromLanguage(language);
-        }
-        const webtoonCount = Object.values(webtoons).reduce((acc, val: any) => acc + val.length, 0);
+        const selectedLanguages: string[] = this.languages.filter(l => process.env.IGNORED_LANGUAGES?.split(";").indexOf(l) === -1);
+        const entries = await Promise.all(
+            selectedLanguages.map(async(language) => {
+                this.logger.verbose(`(Webtoon Canvas) Loading webtoons for language: ${language}`);
+                const webtoons = await this.getWebtoonsFromLanguage(language);
+                return [language, webtoons] as [string, CachedWebtoonModel[]];
+            }),
+        );
+        const webtoons = Object.fromEntries(entries);
+        const webtoonCount = Object.values(webtoons).reduce((acc, val) => acc + val.length, 0);
         this.logger.verbose(`(Webtoon Canvas) Loaded ${webtoonCount} webtoons!`);
         return webtoons;
     }
@@ -41,7 +44,7 @@ export class WebtoonCanvasProvider{
     private async getWebtoonsFromLanguage(language: string): Promise<CachedWebtoonModel[]>{
         const languageWebtoons: CachedWebtoonModel[] = [];
         for(const genre of this.genres){
-            this.logger.verbose("(Webtoon Canvas) Loading webtoons from genre: " + genre);
+            this.logger.verbose(`(Webtoon Canvas) [${language}] Loading webtoons from genre: ${genre}`);
             languageWebtoons.push(...(await this.getWebtoonsFromGenre(language, genre)));
         }
         return this.removeDuplicateWebtoons(languageWebtoons);
@@ -61,12 +64,25 @@ export class WebtoonCanvasProvider{
     }
 
     private async getWebtoonsFromGenre(language: string, genre: string): Promise<CachedWebtoonModel[]>{
-        const pageCount: number = await this.getPageCountFromGenre(language, genre);
+        let error: Error;
+        let pageCount: number;
+        do{
+            error = undefined;
+            try{
+                pageCount = await this.getPageCountFromGenre(language, genre);
+            }catch(e){
+                error = e;
+                await new Promise(resolve => setTimeout(resolve, 5000));
+            }
+        }while(error);
+        pageCount = Math.min(parseInt(process.env.WEBTOON_CANVAS_MAX_PAGES || "999999999"), pageCount);
         const webtoons: CachedWebtoonModel[] = [];
-        const batchSize = 10;
-        for(let batchStart: number = 1; batchStart <= pageCount; batchStart += batchSize){
-            const batchEnd: number = Math.min(batchStart + batchSize - 1, pageCount);
-            this.logger.debug(`(Webtoon Canvas) Loading webtoons from genre: ${genre} - pages ${batchStart} to ${batchEnd}`);
+        let currentBatchSize = 10;
+        let batchStart = 1;
+
+        while(batchStart <= pageCount){
+            const batchEnd: number = Math.min(batchStart + currentBatchSize - 1, pageCount);
+            this.logger.debug(`(Webtoon Canvas) [${language}] Loading webtoons from genre: ${genre} - pages ${batchStart} to ${batchEnd}`);
             try{
                 const batchPromises: Promise<CachedWebtoonModel[]>[] = [];
                 for(let i: number = batchStart; i <= batchEnd; i++)
@@ -74,10 +90,11 @@ export class WebtoonCanvasProvider{
                 const batchResults: CachedWebtoonModel[][] = await Promise.all(batchPromises);
                 for(const page of batchResults)
                     webtoons.push(...page);
-                await new Promise(resolve => setTimeout(resolve, this.miscService.randomInt(1500, 2000)));
+                await new Promise(resolve => setTimeout(resolve, this.miscService.randomInt(2000, 2500)));
+                batchStart += currentBatchSize;
             }catch(e){
-                this.logger.error(`(Webtoon Canvas) Error while loading webtoons from genre: ${genre} - ${e.message}`);
-                batchStart -= batchSize;
+                this.logger.error(`(Webtoon Canvas) [${language}] Error while loading webtoons from genre: ${genre} - ${e.message}`);
+                currentBatchSize = Math.max(1, Math.floor(currentBatchSize - 1));
                 await new Promise(resolve => setTimeout(resolve, 5000));
             }
         }
