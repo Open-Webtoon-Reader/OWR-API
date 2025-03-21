@@ -36,7 +36,7 @@ export default [
                 "error",
                 {
                     caughtErrorsIgnorePattern: "^_",
-                    argsIgnorePattern: "^_|Service$",
+                    argsIgnorePattern: "^_|Service$|Provider$",
                 },
             ],
             "@stylistic/brace-style": [

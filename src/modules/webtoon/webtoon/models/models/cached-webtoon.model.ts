@@ -1,3 +1,4 @@
+import WebtoonProviderEnum from "../enums/webtoon-provider.enum";
 import WebtoonStarModel from "./webtoon-star.model";
 
 export default class CachedWebtoonModel{
@@ -9,6 +10,7 @@ export default class CachedWebtoonModel{
     genres: string[];
     id: string;
     language: string;
+    provider: WebtoonProviderEnum;
 
     constructor(
         title: string,
@@ -19,6 +21,7 @@ export default class CachedWebtoonModel{
         genres: string[],
         id: string,
         language: string,
+        provider: WebtoonProviderEnum,
     ){
         this.title = title;
         this.author = author;
@@ -28,5 +31,6 @@ export default class CachedWebtoonModel{
         this.genres = genres;
         this.id = id;
         this.language = language;
+        this.provider = provider;
     }
 }
