@@ -169,10 +169,9 @@ export class WebtoonProvider{
             error = undefined;
             url = baseUrl + `/x/viewer?title_no=${webtoon.id}&episode_no=${currentEpisode}`;
             try{
-                this.logger.debug(`Fetching episodes from: ${url}`);
                 response = await this.miscService.getAxiosInstance().get(url);
             }catch(e: any){
-                this.logger.debug(`Error while fetching episodes: ${e.message}`);
+                this.logger.debug(`Failed to fetch episode ${currentEpisode}, trying episode  ${currentEpisode + 1}`);
                 error = e;
                 currentEpisode++;
                 await new Promise(resolve => setTimeout(resolve, 5000));
