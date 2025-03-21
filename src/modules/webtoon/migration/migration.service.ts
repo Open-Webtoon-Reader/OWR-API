@@ -12,6 +12,9 @@ import {FileService} from "../../file/file.service";
 import {ConfigService} from "@nestjs/config";
 import {WebtoonParserService} from "../webtoon/webtoon-parser.service";
 import {WebtoonDownloaderService} from "../webtoon/webtoon-downloader.service";
+import CachedWebtoonModel from "../webtoon/models/models/cached-webtoon.model";
+import EpisodeModel from "../webtoon/models/models/episode.model";
+import EpisodeDataModel from "../webtoon/models/models/episode-data.model";
 
 @Injectable()
 export class MigrationService{
@@ -185,12 +188,11 @@ export class MigrationService{
                 id: episode.webtoon_id,
             },
         });
-        const webtoonModel = this.webtoonParserService.findWebtoon(webtoon.title, webtoon.language);
-        const episodeModels = await this.webtoonParserService.getEpisodes(webtoonModel);
-        const episodeModel = episodeModels.find(episodeModel => episodeModel.number === episode.number);
-        const imageUrls = await this.webtoonParserService.getEpisodeLinks(webtoonModel, episodeModel);
-        const episodeData = await this.webtoonDownloaderService.downloadEpisode(episodeModel, imageUrls);
-        await this.webtoonDatabaseService.saveEpisode(webtoonModel, episodeModel, episodeData, episodeModel.number, true);
+        const webtoonModel: CachedWebtoonModel = this.webtoonParserService.findWebtoon(webtoon.title, webtoon.language);
+        const episodeModel: EpisodeModel = (await this.webtoonParserService.getEpisodes(webtoonModel))[episode.number - 1];
+        const imageUrls: string[] = await this.webtoonParserService.getEpisodeLinks(webtoonModel, episodeModel);
+        const episodeData: EpisodeDataModel = await this.webtoonDownloaderService.downloadEpisode(episodeModel, imageUrls);
+        await this.webtoonDatabaseService.saveEpisode(webtoonModel, episodeModel, episodeData, episode.number, true);
         console.log(`Episode ${episode.number} of ${webtoon.title} re-downloaded!`);
     }
 }
