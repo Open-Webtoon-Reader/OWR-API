@@ -13,6 +13,7 @@ import WebtoonResponse from "./models/responses/webtoon-response";
 import MigrationInfosResponse from "../migration/models/responses/migration-infos.response";
 import {FileService} from "../../file/file.service";
 import {ConfigService} from "@nestjs/config";
+import {Images} from "@prisma/client";
 
 @Injectable()
 export class WebtoonDatabaseService{
@@ -26,7 +27,7 @@ export class WebtoonDatabaseService{
         private readonly configService: ConfigService,
     ){}
 
-    async saveEpisode(webtoon: CachedWebtoonModel, episode: EpisodeModel, episodeData: EpisodeDataModel, force: boolean = false): Promise<void>{
+    async saveEpisode(webtoon: CachedWebtoonModel, episode: EpisodeModel, episodeData: EpisodeDataModel, index: number, force: boolean = false): Promise<void>{
         this.logger.debug(`Saving episode ${episode.number}...`);
         const dbWebtoon = await this.prismaService.webtoons.findFirst({
             where: {
@@ -75,7 +76,7 @@ export class WebtoonDatabaseService{
                 const dbEpisode = await tx.episodes.findFirst({
                     where: {
                         webtoon_id: dbWebtoon.id,
-                        number: episode.number,
+                        number: index,
                     },
                 });
                 if(dbEpisode){
@@ -94,7 +95,7 @@ export class WebtoonDatabaseService{
             const dbEpisode = await tx.episodes.create({
                 data: {
                     title: episode.title,
-                    number: episode.number,
+                    number: index,
                     webtoon_id: dbWebtoon.id,
                     thumbnail_id: dbThumbnail.id,
                 },
@@ -200,9 +201,9 @@ export class WebtoonDatabaseService{
             const mobileType = imageTypes.find(type => type.name === ImageTypes.WEBTOON_MOBILE_BANNER);
 
             const thumbnailSum: string = await this.saveImage(webtoonData.thumbnail);
-            const backgroundSum: string = await this.saveImage(webtoonData.backgroundBanner);
-            const topSum: string = await this.saveImage(webtoonData.topBanner);
-            const mobileSum: string = await this.saveImage(webtoonData.mobileBanner);
+            const backgroundSum: string | undefined = await this.saveImage(webtoonData.backgroundBanner);
+            const topSum: string | undefined = await this.saveImage(webtoonData.topBanner);
+            const mobileSum: string | undefined = await this.saveImage(webtoonData.mobileBanner);
 
             const dbThumbnail = await tx.images.create({
                 data: {
@@ -210,33 +211,39 @@ export class WebtoonDatabaseService{
                     type_id: thumbnailType.id,
                 },
             });
-            const dbBackground = await tx.images.create({
-                data: {
-                    sum: backgroundSum,
-                    type_id: backgroundType.id,
-                },
-            });
-            const dbTop = await tx.images.create({
-                data: {
-                    sum: topSum,
-                    type_id: topType.id,
-                },
-            });
-            const dbMobile = await tx.images.create({
-                data: {
-                    sum: mobileSum,
-                    type_id: mobileType.id,
-                },
-            });
+            let dbBackground: Images | undefined;
+            if(backgroundSum)
+                dbBackground = await tx.images.create({
+                    data: {
+                        sum: backgroundSum,
+                        type_id: backgroundType.id,
+                    },
+                });
+            let dbTop: Images | undefined;
+            if(topSum)
+                dbTop = await tx.images.create({
+                    data: {
+                        sum: topSum,
+                        type_id: topType.id,
+                    },
+                });
+            let dbMobile: Images | undefined;
+            if(mobileSum)
+                dbMobile = await tx.images.create({
+                    data: {
+                        sum: mobileSum,
+                        type_id: mobileType.id,
+                    },
+                });
             const dbWebtoon = await tx.webtoons.create({
                 data: {
                     title: webtoon.title,
                     language: webtoon.language,
                     author: webtoon.author,
                     thumbnail_id: dbThumbnail.id,
-                    background_banner_id: dbBackground.id,
-                    top_banner_id: dbTop.id,
-                    mobile_banner_id: dbMobile.id,
+                    background_banner_id: dbBackground?.id,
+                    top_banner_id: dbTop?.id,
+                    mobile_banner_id: dbMobile?.id,
                 },
             });
 
@@ -371,9 +378,9 @@ export class WebtoonDatabaseService{
             isNew,
             hasNewEpisodes,
             webtoon.thumbnail.sum,
-            webtoon.background_banner.sum,
-            webtoon.top_banner.sum,
-            webtoon.mobile_banner.sum,
+            webtoon.background_banner?.sum,
+            webtoon.top_banner?.sum,
+            webtoon.mobile_banner?.sum,
         );
     }
 
@@ -475,7 +482,9 @@ export class WebtoonDatabaseService{
         return images;
     }
 
-    async saveImage(image: Buffer): Promise<string>{
+    async saveImage(image?: Buffer): Promise<string | undefined>{
+        if(!image)
+            return undefined;
         return await this.fileService.saveImage(image);
     }
 

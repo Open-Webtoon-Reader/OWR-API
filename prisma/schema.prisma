@@ -61,12 +61,12 @@ model Webtoons {
   language             String
   thumbnail_id         Int             @unique
   thumbnail            Images          @relation(fields: [thumbnail_id], references: [id], name: "thumbnail")
-  background_banner_id Int             @unique
-  background_banner    Images          @relation(fields: [background_banner_id], references: [id], name: "background_banner")
-  top_banner_id        Int             @unique
-  top_banner           Images          @relation(fields: [top_banner_id], references: [id], name: "top_banner")
-  mobile_banner_id     Int             @unique
-  mobile_banner        Images          @relation(fields: [mobile_banner_id], references: [id], name: "mobile_banner")
+  background_banner_id Int?            @unique
+  background_banner    Images?         @relation(fields: [background_banner_id], references: [id], name: "background_banner")
+  top_banner_id        Int?            @unique
+  top_banner           Images?         @relation(fields: [top_banner_id], references: [id], name: "top_banner")
+  mobile_banner_id     Int?            @unique
+  mobile_banner        Images?         @relation(fields: [mobile_banner_id], references: [id], name: "mobile_banner")
   created_at           DateTime        @default(now())
   updated_at           DateTime        @default(now()) @updatedAt
   genres               WebtoonGenres[]
