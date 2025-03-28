@@ -20,6 +20,8 @@ model Users {
   password             String
   jwt_id               String                @db.VarChar(64)
   admin                Boolean               @default(false)
+  avatar_id            Int?                  @unique
+  avatar               Images?               @relation(fields: [avatar_id], references: [id])
   episode_progerssions EpisodeProgressions[]
 
   @@map("users")
@@ -55,6 +57,7 @@ model Images {
   mobile_banner     Webtoons?       @relation("mobile_banner")
   episodes          Episodes[]
   episode_images    EpisodeImages[]
+  user              Users?
 
   @@map("images")
 }
