@@ -5,7 +5,7 @@
     "private": true,
     "license": "UNLICENSED",
     "scripts": {
-        "build": "nest build",
+        "build": "bun --bun nest build",
         "start": "bun --bun nest start",
         "start:dev": "bun --hot ./src/app.ts",
         "start:prod": "bun dist/src/app",
@@ -16,6 +16,7 @@
         "@fastify/static": "^8.1.1",
         "@nestjs/common": "^11.0.13",
         "@nestjs/config": "^4.0.2",
+        "@nestjs/cli": "^11.0.6",
         "@nestjs/core": "^11.0.13",
         "@nestjs/jwt": "^11.0.0",
         "@nestjs/passport": "^11.0.5",
@@ -34,17 +35,13 @@
         "jszip": "^3.10.1",
         "minio": "^8.0.5",
         "passport-jwt": "^4.0.1",
-        "reflect-metadata": "^0.2.2",
-        "rxjs": "^7.8.2",
         "sharp": "^0.33.5",
         "socket.io": "^4.8.1",
         "swagger-themes": "^1.4.3",
         "uuid": "^11.1.0"
     },
     "devDependencies": {
-        "@nestjs/cli": "^11.0.6",
         "@nestjs/schematics": "^11.0.3",
-        "@nestjs/testing": "^11.0.13",
         "@stylistic/eslint-plugin": "^4.2.0",
         "@types/bun": "^1.2.8",
         "@types/jsdom": "^21.1.7",
@@ -54,9 +51,6 @@
         "eslint": "^9.23.0",
         "prisma": "^6.5.0",
         "source-map-support": "^0.5.21",
-        "ts-loader": "^9.5.2",
-        "ts-node": "^10.9.2",
-        "tsconfig-paths": "^4.2.0",
         "typescript": "^5.8.2"
     },
     "prisma": {

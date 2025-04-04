@@ -6,7 +6,7 @@ COPY bun.lock ./
 COPY package.json ./
 COPY tsconfig.json ./
 
-RUN bun install --production --frozen-lockfile
+RUN bun install --frozen-lockfile
 
 COPY prisma ./prisma/
 RUN bunx prisma generate
