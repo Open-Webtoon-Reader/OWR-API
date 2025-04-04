@@ -1,12 +1,11 @@
-import {PrismaClient} from "@prisma/client";
-import * as dotenv from "dotenv";
+import {PrismaClient, Users} from "@prisma/client";
 import WebtoonGenres from "./../src/modules/webtoon/webtoon/models/enums/webtoon-genres";
 import ImageTypes from "./../src/modules/webtoon/webtoon/models/enums/image-types";
-
-dotenv.config();
+import {MiscService} from "../src/modules/misc/misc.service";
 
 // initialize Prisma Client
 const prisma = new PrismaClient();
+const miscService = new MiscService();
 
 async function main(){
     const gStart = Date.now();
@@ -15,6 +14,18 @@ async function main(){
 
     const image_types_values = Object.values(ImageTypes).map(value => ({name: value}));
     await seed(prisma.imageTypes, image_types_values);
+
+    const users_values = [
+        {
+            id: "0195dc7c-f315-7881-b35b-da9cbb6ee4a0",
+            username: process.env.ADMIN_USERNAME || "admin",
+            email: process.env.ADMIN_EMAIL || "admin@admin.com",
+            password: miscService.hashPassword(process.env.ADMIN_PASSWORD || "password@admin.com"),
+            jwt_id: miscService.generateRandomBytes(32),
+            admin: true,
+        } as Users,
+    ];
+    await idSeed(prisma.users, users_values, false);
     console.log(`\n✅  Seeding completed ! (${Date.now() - gStart}ms)`);
 }
 
@@ -27,6 +38,22 @@ async function seed(table: any, data: any[]){
             },
             create: {
                 ...data[i - 1],
+            },
+        });
+    }
+}
+
+async function idSeed(table: any, data: any[], update: boolean = true){
+    for(let i = 0; i < data.length; i++){
+        await table.upsert({
+            where: {id: data[i].id},
+            update: update
+                ? {
+                    ...data[i],
+                }
+                : {},
+            create: {
+                ...data[i],
             },
         });
     }

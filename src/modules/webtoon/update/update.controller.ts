@@ -1,12 +1,11 @@
-import {Controller, Logger, Post, UseGuards} from "@nestjs/common";
-import {UpdateService} from "./update.service";
+import {Controller, HttpStatus, Logger, Post, UseGuards} from "@nestjs/common";
 import {ApiBearerAuth, ApiResponse, ApiTags} from "@nestjs/swagger";
-import {AdminGuard} from "../admin/guard/admin.guard";
-import {HttpStatusCode} from "axios";
+import {UpdateService} from "./update.service";
+import {AuthGuard} from "@nestjs/passport";
 
 @Controller("update")
 @ApiTags("Update")
-@UseGuards(AdminGuard)
+@UseGuards(AuthGuard("admin-jwt"))
 export class UpdateController{
     private readonly logger = new Logger(UpdateController.name);
 
@@ -16,7 +15,7 @@ export class UpdateController{
 
     @Post("webtoons/thumbnails")
     @ApiBearerAuth()
-    @ApiResponse({status: HttpStatusCode.Created, description: "Thumbnails updated"})
+    @ApiResponse({status: HttpStatus.CREATED, description: "Thumbnails updated"})
     async updateThumbnails(): Promise<void>{
         this.updateService.updateThumbnails().then(() => this.logger.log("Thumbnails updated"));
     }

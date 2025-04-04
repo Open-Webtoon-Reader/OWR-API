@@ -1,11 +1,11 @@
-import {JSDOM} from "jsdom";
-import {Injectable, Logger, NotFoundException} from "@nestjs/common";
-import {MiscService} from "src/modules/misc/misc.service";
-import CachedWebtoonModel from "../models/models/cached-webtoon.model";
-import WebtoonModel from "../models/models/webtoon.model";
-import EpisodeModel from "../models/models/episode.model";
 import WebtoonProviderEnum from "../models/enums/webtoon-provider.enum";
+import CachedWebtoonModel from "../models/models/cached-webtoon.model";
+import {Injectable, Logger, NotFoundException} from "@nestjs/common";
+import {MiscService} from "../../../misc/misc.service";
+import EpisodeModel from "../models/models/episode.model";
+import WebtoonModel from "../models/models/webtoon.model";
 import {WebtoonProvider} from "./webtoon.provider";
+import {JSDOM} from "jsdom";
 
 @Injectable()
 export class WebtoonCanvasProvider{

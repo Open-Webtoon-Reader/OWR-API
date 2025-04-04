@@ -1,10 +1,10 @@
-import {Injectable} from "@nestjs/common";
-import {createHash} from "crypto";
-import * as JSZip from "jszip";
-import * as fs from "fs";
-import * as sharp from "sharp";
 import WebtoonStarModel from "../webtoon/webtoon/models/models/webtoon-star.model";
 import axios, {AxiosInstance} from "axios";
+import {Injectable} from "@nestjs/common";
+import {createHash, randomBytes} from "crypto";
+import * as JSZip from "jszip";
+import sharp from "sharp";
+import * as fs from "fs";
 
 @Injectable()
 export class MiscService{
@@ -25,6 +25,21 @@ export class MiscService{
     constructor(){
         this.axiosInstance = axios.create({});
         this.randomUserAgentChange(1);
+    }
+
+    generateRandomBytes(bytes: number = 32){
+        return randomBytes(bytes).toString("hex");
+    }
+
+    hashPassword(content: Bun.StringOrBuffer, cost = 10): string{
+        return Bun.password.hashSync(content, {
+            algorithm: "argon2id",
+            timeCost: cost,
+        });
+    }
+
+    comparePassword(password: Bun.StringOrBuffer, hash: string): boolean{
+        return Bun.password.verifySync(password, hash);
     }
 
     randomUserAgentChange(probability: number = 0){

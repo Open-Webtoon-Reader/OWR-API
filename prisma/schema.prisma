@@ -13,6 +13,31 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Users {
+  id                   String                @id @db.VarChar(36)
+  username             String                @unique @db.VarChar(30)
+  email                String                @unique @db.VarChar(255)
+  password             String
+  jwt_id               String                @db.VarChar(64)
+  admin                Boolean               @default(false)
+  avatar_id            Int?                  @unique
+  avatar               Images?               @relation(fields: [avatar_id], references: [id])
+  episode_progerssions EpisodeProgressions[]
+
+  @@map("users")
+}
+
+model EpisodeProgressions {
+  user_id     String
+  user        Users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  episode_id  Int
+  episode     Episodes @relation(fields: [episode_id], references: [id], onDelete: Cascade)
+  progression Int      @default(0)
+
+  @@id([user_id, episode_id])
+  @@map("episode_progressions")
+}
+
 model ImageTypes {
   id    Int      @id @default(autoincrement())
   name  String
@@ -32,6 +57,7 @@ model Images {
   mobile_banner     Webtoons?       @relation("mobile_banner")
   episodes          Episodes[]
   episode_images    EpisodeImages[]
+  user              Users?
 
   @@map("images")
 }
@@ -77,15 +103,16 @@ model Webtoons {
 }
 
 model Episodes {
-  id             Int             @id @default(autoincrement())
-  title          String
-  number         Int
-  webtoon_id     Int
-  webtoon        Webtoons        @relation(fields: [webtoon_id], references: [id], onDelete: Cascade)
-  thumbnail_id   Int
-  thumbnail      Images          @relation(fields: [thumbnail_id], references: [id])
-  created_at     DateTime        @default(now())
-  episode_images EpisodeImages[]
+  id                   Int                   @id @default(autoincrement())
+  title                String
+  number               Int
+  webtoon_id           Int
+  webtoon              Webtoons              @relation(fields: [webtoon_id], references: [id], onDelete: Cascade)
+  thumbnail_id         Int
+  thumbnail            Images                @relation(fields: [thumbnail_id], references: [id])
+  created_at           DateTime              @default(now())
+  episode_images       EpisodeImages[]
+  episode_progerssions EpisodeProgressions[]
 
   @@unique([webtoon_id, number])
   @@map("episodes")

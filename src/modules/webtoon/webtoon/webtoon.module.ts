@@ -11,9 +11,27 @@ import {WebtoonProvider} from "./providers/webtoon.provider";
 import {WebtoonCanvasProvider} from "./providers/webtoon-canvas.provider";
 
 @Module({
-    imports: [MiscModule, FileModule, WebsocketModule],
-    controllers: [WebtoonController],
-    providers: [WebtoonCanvasProvider, WebtoonProvider, WebtoonParserService, WebtoonDownloaderService, WebtoonDatabaseService, DownloadManagerService],
-    exports: [DownloadManagerService, WebtoonDatabaseService, WebtoonParserService, WebtoonDownloaderService],
+    imports: [
+        MiscModule,
+        FileModule,
+        WebsocketModule,
+    ],
+    controllers: [
+        WebtoonController,
+    ],
+    providers: [
+        WebtoonCanvasProvider,
+        WebtoonProvider,
+        WebtoonParserService,
+        WebtoonDownloaderService,
+        WebtoonDatabaseService,
+        DownloadManagerService,
+    ],
+    exports: [
+        DownloadManagerService,
+        WebtoonDatabaseService,
+        WebtoonParserService,
+        WebtoonDownloaderService,
+    ],
 })
 export class WebtoonModule{}

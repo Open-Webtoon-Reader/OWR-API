@@ -11,6 +11,8 @@ import {UpdateModule} from "./modules/webtoon/update/update.module";
 import {ImageModule} from "./modules/webtoon/image/image.module";
 import {WebsocketModule} from "./modules/websocket/websocket.module";
 import {CustomValidationPipe} from "./common/pipes/custom-validation.pipe";
+import {MiscModule} from "./modules/misc/misc.module";
+import {UsersModule} from "./modules/users/users.module";
 
 @Module({
     imports: [
@@ -21,12 +23,14 @@ import {CustomValidationPipe} from "./common/pipes/custom-validation.pipe";
             limit: 50,
         }]),
         TaskModule,
+        MiscModule,
         WebtoonModule,
         AdminModule,
         MigrationModule,
         UpdateModule,
         ImageModule,
         WebsocketModule,
+        UsersModule,
     ],
     controllers: [],
     providers: [

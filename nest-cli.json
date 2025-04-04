@@ -8,7 +8,7 @@
         "plugins": [{
             "name": "@nestjs/swagger",
             "options": {
-                "dtoFileNameSuffix": [".dto.ts", ".entity.ts", ".response.ts"],
+                "dtoFileNameSuffix": [".dto.ts", ".entity.ts", ".response.ts", ".payload.ts"],
                 "introspectComments": true
             }
         }]
