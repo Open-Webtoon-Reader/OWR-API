@@ -1,9 +1,10 @@
-import {Injectable, NotFoundException, UnauthorizedException} from "@nestjs/common";
+import {BadRequestException, Injectable, NotFoundException, UnauthorizedException} from "@nestjs/common";
+import ImageTypes from "../webtoon/webtoon/models/enums/image-types";
+import {LoginPayload} from "./models/payloads/login.payload";
 import {UserEntity} from "./models/entities/user.entity";
 import {PrismaService} from "../misc/prisma.service";
-import {Images, Users} from "@prisma/client";
-import {LoginPayload} from "./models/payloads/login.payload";
 import {MiscService} from "../misc/misc.service";
+import {Images, Users} from "@prisma/client";
 import {JwtService} from "@nestjs/jwt";
 
 @Injectable()
@@ -22,10 +23,11 @@ export class UsersService{
             password: user.password,
             avatar: avatar,
             jwtId: user.jwt_id,
+            admin: user.admin,
         });
     }
 
-    async getAvailableAvatars(): Promise<Images[]>{
+    async getAvailableAvatars(): Promise<string[]>{
         const webtoons: any[] = await this.prismaService.webtoons.findMany({
             include: {
                 thumbnail: true,
@@ -37,15 +39,30 @@ export class UsersService{
         for(const webtoon of webtoons)
             if(webtoon.thumbnail)
                 avatars.push(webtoon.thumbnail);
-        return avatars;
+        return avatars.map((avatar: Images): string => avatar.sum);
     }
 
-    async randomAvatar(): Promise<Images | undefined>{
-        const avatars = await this.getAvailableAvatars();
-        if(!avatars.length)
-            return undefined;
-        const randomWebtoon: any = avatars[Math.floor(Math.random() * avatars.length)];
-        return randomWebtoon.thumbnail;
+    async setAvatar(user: UserEntity, sum: string){
+        const avatar = await this.prismaService.images.findUnique({
+            where: {
+                sum,
+            },
+            include: {
+                type: true,
+            },
+        });
+        if(!avatar)
+            throw new NotFoundException("Image not found");
+        if(avatar.type.name !== ImageTypes.WEBTOON_THUMBNAIL)
+            throw new BadRequestException("Specified image is not a webtoon thumbnail");
+        await this.prismaService.users.update({
+            where: {
+                id: user.id,
+            },
+            data: {
+                avatar_id: avatar.id,
+            },
+        });
     }
 
     async getUserById(userId: string): Promise<UserEntity>{
@@ -62,10 +79,17 @@ export class UsersService{
         return this.toUserEntity(user, user.avatar?.sum);
     }
 
-    async login(email: string, password: string): Promise<LoginPayload>{
-        const user = await this.prismaService.users.findUnique({
+    async login(usernameOrEmail: string, password: string): Promise<LoginPayload>{
+        const user = await this.prismaService.users.findFirst({
             where: {
-                email,
+                OR: [
+                    {
+                        username: usernameOrEmail,
+                    },
+                    {
+                        email: usernameOrEmail,
+                    },
+                ],
             },
             include: {
                 avatar: true,

@@ -2,16 +2,13 @@ import {FastifyAdapter, NestFastifyApplication} from "@nestjs/platform-fastify";
 import {LoggerMiddleware} from "./common/middlewares/logger.middleware";
 import {SwaggerTheme, SwaggerThemeNameEnum} from "swagger-themes";
 import {DocumentBuilder, SwaggerModule} from "@nestjs/swagger";
+import {FastifyListenOptions} from "fastify/types/instance";
 import fastifyHelmet from "@fastify/helmet";
+import {RawServerDefault} from "fastify";
 import {NestFactory} from "@nestjs/core";
 import {AppModule} from "./app.module";
 import {Logger} from "@nestjs/common";
 import * as process from "process";
-import * as dotenv from "dotenv";
-import {FastifyListenOptions} from "fastify/types/instance";
-import {RawServerDefault} from "fastify";
-
-dotenv.config();
 
 const logger: Logger = new Logger("App");
 

@@ -5,7 +5,7 @@ import {ExtractJwt, Strategy} from "passport-jwt";
 import {PassportStrategy} from "@nestjs/passport";
 
 @Injectable()
-export class JwtStrategy extends PassportStrategy(Strategy, "jwt"){
+export class AdminJwtStrategy extends PassportStrategy(Strategy, "admin-jwt"){
     constructor(
         private readonly usersService: UsersService,
     ){
@@ -24,6 +24,8 @@ export class JwtStrategy extends PassportStrategy(Strategy, "jwt"){
             throw new NotFoundException("User not found");
         if(user.jwtId !== payload.jti)
             throw new UnauthorizedException("Invalid token");
+        if(!user.admin)
+            throw new UnauthorizedException("User is not admin");
         return user;
     }
 }

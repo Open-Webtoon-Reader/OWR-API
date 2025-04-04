@@ -1,11 +1,11 @@
 import {Controller, Post, UseGuards} from "@nestjs/common";
 import {ApiBearerAuth, ApiTags} from "@nestjs/swagger";
-import {AdminGuard} from "../webtoon/admin/guard/admin.guard";
 import {FileService} from "./file.service";
+import {AuthGuard} from "@nestjs/passport";
 
 @Controller("file")
 @ApiTags("File")
-@UseGuards(AdminGuard)
+@UseGuards(AuthGuard("admin-jwt"))
 export class FileController{
     constructor(
         private readonly fileService: FileService,

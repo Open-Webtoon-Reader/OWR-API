@@ -1,4 +1,4 @@
-import {Body, Controller, Get, Post, UseGuards} from "@nestjs/common";
+import {Body, Controller, Get, Param, Post, UseGuards} from "@nestjs/common";
 import {UserEntity} from "./models/entities/user.entity";
 import {LoginPayload} from "./models/payloads/login.payload";
 import {User} from "./decorators/user.decorator";
@@ -15,7 +15,7 @@ export class UsersController{
 
     @Post("login")
     async login(@Body() body: LoginDto): Promise<LoginPayload>{
-        return await this.usersService.login(body.email, body.password);
+        return await this.usersService.login(body.usernameOrEmail, body.password);
     }
 
     @Get("me")
@@ -23,5 +23,20 @@ export class UsersController{
     @ApiBearerAuth()
     getMe(@User() user: UserEntity): UserEntity{
         return user;
+    }
+
+    @Get("avatars")
+    async getAvailableAvatars(): Promise<string[]>{
+        const avatars: string[] = await this.usersService.getAvailableAvatars();
+        if(!avatars.length)
+            return undefined;
+        return avatars;
+    }
+
+    @Post("avatar/:sum")
+    @UseGuards(AuthGuard("jwt"))
+    @ApiBearerAuth()
+    async setAvatar(@User() user: UserEntity, @Param("sum") sum: string): Promise<void>{
+        await this.usersService.setAvatar(user, sum);
     }
 }

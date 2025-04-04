@@ -5,6 +5,7 @@ export class UserEntity{
     username: string;
     email: string;
     avatar: string;
+    admin: boolean;
 
     @Exclude()
     password: string;

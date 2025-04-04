@@ -15,7 +15,7 @@ datasource db {
 
 model Users {
   id                   String                @id @db.VarChar(36)
-  username             String                @db.VarChar(30)
+  username             String                @unique @db.VarChar(30)
   email                String                @unique @db.VarChar(255)
   password             String
   jwt_id               String                @db.VarChar(64)

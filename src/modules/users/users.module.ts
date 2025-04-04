@@ -5,6 +5,7 @@ import {MiscModule} from "../misc/misc.module";
 import {JwtStrategy} from "./strategies/jwt.strategy";
 import {ConfigService} from "@nestjs/config";
 import {JwtModule} from "@nestjs/jwt";
+import {AdminJwtStrategy} from "./strategies/admin-jwt.strategy";
 
 @Module({
     imports: [
@@ -29,6 +30,7 @@ import {JwtModule} from "@nestjs/jwt";
     providers: [
         UsersService,
         JwtStrategy,
+        AdminJwtStrategy,
     ],
 })
 export class UsersModule{}
