@@ -39,4 +39,25 @@ export class UsersController{
     async setAvatar(@User() user: UserEntity, @Param("sum") sum: string): Promise<void>{
         await this.usersService.setAvatar(user, sum);
     }
+
+    @Get("progression/webtoon/:webtoon_id")
+    @UseGuards(AuthGuard("jwt"))
+    @ApiBearerAuth()
+    async getWebtoonProgression(@User() user: UserEntity, @Param("webtoon_id") webtoonId: number){
+        return await this.usersService.getWebtoonProgression(user, webtoonId);
+    }
+
+    @Get("progression/episode/:episode_id")
+    @UseGuards(AuthGuard("jwt"))
+    @ApiBearerAuth()
+    async getEpisodeProgression(@User() user: UserEntity, @Param("episode_id") episodeId: number){
+        return await this.usersService.getEpisodeProgression(user, episodeId);
+    }
+
+    @Post("progression/:episode_id")
+    @UseGuards(AuthGuard("jwt"))
+    @ApiBearerAuth()
+    async setEpisodeProgression(@User() user: UserEntity, @Param("episode_id") episodeId: number, @Body("progression") progression: number): Promise<void>{
+        await this.usersService.setEpisodeProgression(user, episodeId, progression);
+    }
 }

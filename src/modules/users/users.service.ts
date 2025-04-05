@@ -4,7 +4,7 @@ import {LoginPayload} from "./models/payloads/login.payload";
 import {UserEntity} from "./models/entities/user.entity";
 import {PrismaService} from "../misc/prisma.service";
 import {MiscService} from "../misc/misc.service";
-import {Images, Users} from "@prisma/client";
+import {EpisodeProgressions, Images, Users} from "@prisma/client";
 import {JwtService} from "@nestjs/jwt";
 
 @Injectable()
@@ -107,5 +107,51 @@ export class UsersService{
                 jwtid: user.jwt_id,
             }),
         };
+    }
+
+    async getWebtoonProgression(user: UserEntity, webtoonId: number){
+        // TODO
+    }
+
+    async getEpisodeProgression(user: UserEntity, episodeId: number): Promise<number>{
+        const episodeProgression: EpisodeProgressions = await this.prismaService.episodeProgressions.findUnique({
+            where: {
+                user_id_episode_id: {
+                    user_id: user.id,
+                    episode_id: episodeId,
+                },
+            },
+        });
+        if(!episodeProgression)
+            throw new NotFoundException("Episode progression not found");
+        return episodeProgression.progression;
+    }
+
+    async setEpisodeProgression(user: UserEntity, episodeId: number, progression: number){
+        const episodeProgression: EpisodeProgressions = await this.prismaService.episodeProgressions.findUnique({
+            where: {
+                user_id_episode_id: {
+                    user_id: user.id,
+                    episode_id: episodeId,
+                },
+            },
+        });
+        if(!episodeProgression)
+            throw new NotFoundException("Episode progression not found");
+        if(progression < 0)
+            throw new BadRequestException("Invalid progression");
+        if(progression < episodeProgression.progression)
+            throw new BadRequestException("New progression must be greater than existing one");
+        await this.prismaService.episodeProgressions.update({
+            where: {
+                user_id_episode_id: {
+                    user_id: episodeProgression.user_id,
+                    episode_id: episodeProgression.episode_id,
+                },
+            },
+            data: {
+                progression,
+            },
+        });
     }
 }
