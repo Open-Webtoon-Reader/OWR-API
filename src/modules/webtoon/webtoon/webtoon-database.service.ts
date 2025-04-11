@@ -14,6 +14,7 @@ import MigrationInfosResponse from "../migration/models/responses/migration-info
 import {FileService} from "../../file/file.service";
 import {ConfigService} from "@nestjs/config";
 import {Images} from "@prisma/client";
+import {StorageService} from "../../storage/storage.service";
 
 @Injectable()
 export class WebtoonDatabaseService{
@@ -25,6 +26,7 @@ export class WebtoonDatabaseService{
         private readonly prismaService: PrismaService,
         private readonly fileService: FileService,
         private readonly configService: ConfigService,
+        private readonly storageService: StorageService,
     ){}
 
     async saveEpisode(webtoon: CachedWebtoonModel, episode: EpisodeModel, episodeData: EpisodeDataModel, index: number, force: boolean = false): Promise<void>{
@@ -485,15 +487,17 @@ export class WebtoonDatabaseService{
     async saveImage(image?: Buffer): Promise<string | undefined>{
         if(!image)
             return undefined;
-        return await this.fileService.saveImage(image);
+        // return await this.fileService.saveImage(image);
+        return await this.storageService.uploadBuffer(image);
     }
 
     async loadImage(imageSum: string): Promise<Buffer>{
-        return await this.fileService.loadImage(imageSum);
+        // return await this.fileService.loadImage(imageSum);
+        return await this.storageService.downloadBuffer(imageSum);
     }
 
     async removeImage(imageSum: string): Promise<void>{
-        await this.fileService.removeImage(imageSum);
+        await this.storageService.deleteFile(imageSum);
     }
 
     async getRandomThumbnails(){

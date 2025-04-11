@@ -13,6 +13,7 @@ import {WebsocketModule} from "./modules/websocket/websocket.module";
 import {CustomValidationPipe} from "./common/pipes/custom-validation.pipe";
 import {MiscModule} from "./modules/misc/misc.module";
 import {UsersModule} from "./modules/users/users.module";
+import {StorageModule} from "./modules/storage/storage.module";
 
 @Module({
     imports: [
@@ -31,6 +32,7 @@ import {UsersModule} from "./modules/users/users.module";
         ImageModule,
         WebsocketModule,
         UsersModule,
+        StorageModule,
     ],
     controllers: [],
     providers: [

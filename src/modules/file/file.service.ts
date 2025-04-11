@@ -1,4 +1,4 @@
-import {Injectable, NotFoundException} from "@nestjs/common";
+import {Injectable, Logger, NotFoundException} from "@nestjs/common";
 import {ConfigService} from "@nestjs/config";
 import {PrismaService} from "../misc/prisma.service";
 import {MiscService} from "../misc/misc.service";
@@ -12,6 +12,7 @@ import {BucketItem} from "minio";
 export class FileService{
     private readonly saver: Saver;
     private readonly secondarySaver: Saver;
+    private readonly logger: Logger = new Logger(FileService.name);
 
     constructor(
         private readonly configService: ConfigService,
@@ -27,7 +28,11 @@ export class FileService{
             this.saver = this.getFileSaver();
     }
 
+    /**
+     * @deprecated
+     */
     getS3Saver(){
+        this.logger.warn("Deprecated: FileService.getS3Saver");
         return new S3Saver(
             this.configService.get("S3_ENDPOINT"),
             this.configService.get("S3_PORT"),
@@ -39,11 +44,20 @@ export class FileService{
         );
     }
 
+    /**
+     * @deprecated
+     */
     getFileSaver(){
+        this.logger.warn("Deprecated: FileService.getFileSaver");
         return new FileSaver("images");
     }
 
+    /**
+     * @deprecated
+     * @param data
+     */
     async saveImage(data: Buffer): Promise<string>{
+        this.logger.warn("Deprecated: FileService.saveImage");
         const sum = this.cipherService.getSum(data);
         await this.saver.saveFile(data, sum);
         if(this.configService.get("FILESYSTEM") === "both")
@@ -51,7 +65,12 @@ export class FileService{
         return sum;
     }
 
+    /**
+     * @deprecated
+     * @param sum
+     */
     async loadImage(sum: string): Promise<Buffer>{
+        this.logger.warn("Deprecated: FileService.loadImage");
         try{
             const stream = await this.saver.getFile(sum);
             return await new Promise<Buffer>((resolve, reject) => {
@@ -65,13 +84,22 @@ export class FileService{
         }
     }
 
+    /**
+     * @deprecated
+     * @param sum
+     */
     async removeImage(sum: string): Promise<void>{
+        this.logger.warn("Deprecated: FileService.removeImage");
         await this.saver.removeFile(sum);
         if(this.configService.get("FILESYSTEM") === "both")
             await this.secondarySaver.removeFile(sum);
     }
 
+    /**
+     * @deprecated
+     */
     async checkIntegrity(){
+        this.logger.warn("Deprecated: FileService.checkIntegrity");
         if(this.configService.get("FILESYSTEM") === "both"){
             await this.checkS3Integrity();
             await this.checkLocalIntegrity();
