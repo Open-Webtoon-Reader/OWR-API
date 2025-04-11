@@ -1,20 +1,20 @@
-import {Injectable, Logger} from "@nestjs/common";
-import {createReadStream, ReadStream} from "fs";
-import {WebtoonDatabaseService} from "../webtoon/webtoon-database.service";
-import * as JSZip from "jszip";
-import {Readable} from "stream";
 import MigrationInfosResponse from "./models/responses/migration-infos.response";
-import axios from "axios";
-import {PrismaService} from "../../misc/prisma.service";
-import * as fs from "node:fs";
-import * as https from "node:https";
-import {FileService} from "../../file/file.service";
-import {ConfigService} from "@nestjs/config";
-import {WebtoonParserService} from "../webtoon/webtoon-parser.service";
 import {WebtoonDownloaderService} from "../webtoon/webtoon-downloader.service";
 import CachedWebtoonModel from "../webtoon/models/models/cached-webtoon.model";
-import EpisodeModel from "../webtoon/models/models/episode.model";
+import {Injectable, InternalServerErrorException, Logger} from "@nestjs/common";
+import {WebtoonDatabaseService} from "../webtoon/webtoon-database.service";
 import EpisodeDataModel from "../webtoon/models/models/episode-data.model";
+import {WebtoonParserService} from "../webtoon/webtoon-parser.service";
+import EpisodeModel from "../webtoon/models/models/episode.model";
+import {StorageService} from "../../storage/storage.service";
+import {PrismaService} from "../../misc/prisma.service";
+import {createReadStream, ReadStream} from "fs";
+import * as https from "node:https";
+import {Readable} from "stream";
+import * as JSZip from "jszip";
+import * as fs from "node:fs";
+import axios from "axios";
+import {BunFile, S3File} from "bun";
 
 @Injectable()
 export class MigrationService{
@@ -23,10 +23,9 @@ export class MigrationService{
     constructor(
         private readonly webtoonDatabaseService: WebtoonDatabaseService,
         private readonly prismaService: PrismaService,
-        private readonly fileService: FileService,
-        private readonly configService: ConfigService,
         private readonly webtoonParserService: WebtoonParserService,
         private readonly webtoonDownloaderService: WebtoonDownloaderService,
+        private readonly storageService: StorageService,
     ){}
 
     async migrateFrom(url: string, adminKey: string){
@@ -50,7 +49,7 @@ export class MigrationService{
                 images[fileName] = await file.async("nodebuffer");
             this.logger.debug(`Saving images from chunk ${i}/${migrationInfos.chunkNumber}`);
             for(const buffer of Object.values(images))
-                this.webtoonDatabaseService.saveImage(buffer);
+                await this.webtoonDatabaseService.saveImage(buffer);
             this.logger.debug(`Chunk ${i}/${migrationInfos.chunkNumber} migrated!`);
         }
         // Database migration
@@ -109,72 +108,52 @@ export class MigrationService{
         }
     }
 
-    async migrateToS3(){
-        const s3Saver = this.fileService.getS3Saver();
-        const dbImageBatchSize = 10000;
-        const s3BatchSize = parseInt(this.configService.get("S3_BATCH_SIZE"));
-        const imageCount = await this.prismaService.images.count();
-        await s3Saver.createBucketIfNotExists();
-        for(let i = 0; i < imageCount; i += dbImageBatchSize){
-            this.logger.debug(`Migrating images from ${i} to ${i + dbImageBatchSize}`);
-            const images = await this.prismaService.images.findMany({
-                skip: i,
-                take: dbImageBatchSize,
-                select: {
-                    id: true,
-                    sum: true,
-                },
-            });
-            const imageSums = images.map(image => image.sum);
-            for(let j = 0; j < imageSums.length; j += s3BatchSize){
-                try{
-                    this.logger.debug(`Uploading images from ${j} to ${j + s3BatchSize}`);
-                    const batch = imageSums.slice(j, j + s3BatchSize);
-                    await Promise.all(batch.map(async sum => s3Saver.saveFile(await this.fileService.loadImage(sum), sum)));
-                }catch(error){
-                    this.logger.error(`Error uploading images from ${j} to ${j + s3BatchSize}: ${error}`);
-                    await new Promise(resolve => setTimeout(resolve, 10000));
-                    j -= s3BatchSize;
-                }
-            }
+    async migrateToS3(): Promise<void>{
+        this.logger.log("Migrating to S3...");
+        if(!this.storageService.isS3())
+            throw new InternalServerErrorException("Storage service is not S3");
+        async function writeFile(storageService: StorageService, file: BunFile): Promise<void>{
+            await storageService.uploadBuffer(Buffer.from(await file.arrayBuffer()));
         }
-        this.logger.debug("Migration to S3 completed!");
+        const batchSize = 1000;
+        const files: BunFile[] = await this.storageService.listLocalFiles();
+        for(let i: number = 0; i < files.length; i += batchSize){
+            const batch: BunFile[] = files.slice(i, i + batchSize);
+            const uploadPromises: Promise<void>[] = batch.map((file: BunFile) => writeFile(this.storageService, file));
+            await Promise.all(uploadPromises);
+        }
+        this.logger.log("Migration to s3 completed!");
     }
 
-    async migrateToLocal(){
-        const fileSaver = this.fileService.getFileSaver();
-        const dbImageBatchSize = 10000;
-        const localBatchSize = parseInt(this.configService.get("S3_BATCH_SIZE"));
-        const imageCount = await this.prismaService.images.count();
-        for(let i = 0; i < imageCount; i += dbImageBatchSize){
-            this.logger.debug(`Migrating images from ${i} to ${i + dbImageBatchSize}`);
-            const images = await this.prismaService.images.findMany({
-                skip: i,
-                take: dbImageBatchSize,
-                select: {
-                    id: true,
-                    sum: true,
-                },
-            });
-            const imageSums = images.map(image => image.sum);
-            for(let j = 0; j < imageSums.length; j += localBatchSize){
-                try{
-                    this.logger.debug(`Saving images from ${j} to ${j + localBatchSize}`);
-                    const batch = imageSums.slice(j, j + localBatchSize);
-                    await Promise.all(batch.map(async sum => fileSaver.saveFile(await this.fileService.loadImage(sum), sum)));
-                }catch(error){
-                    this.logger.error(`Error saving images from ${j} to ${j + localBatchSize}: ${error}`);
-                    await new Promise(resolve => setTimeout(resolve, 10000));
-                    j -= localBatchSize;
-                }
-            }
+    async migrateToLocal(): Promise<void>{
+        this.logger.log("Migrating to local...");
+        async function writeFile(file: S3File): Promise<void>{
+            await Bun.file(`images/${file.name}`).write(await file.arrayBuffer());
         }
-        this.logger.debug("Migration to local completed!");
+        if(!this.storageService.isS3())
+            throw new InternalServerErrorException("Storage service is not S3");
+        const batchSize = 1000;
+        const files: S3File[] = await this.storageService.listS3Files();
+        for(let i: number = 0; i < files.length; i += batchSize){
+            const batch: S3File[] = files.slice(i, i + batchSize);
+            const uploadPromises: Promise<void>[] = batch.map((file: S3File) => writeFile(file));
+            await Promise.all(uploadPromises);
+        }
+        this.logger.log("Migration to local completed!");
     }
 
     async clearS3(): Promise<void>{
-        const s3Saver = this.fileService.getS3Saver();
-        await s3Saver.clearBucket();
+        if(process.env.NODE_ENV === "production")
+            throw new InternalServerErrorException("You cannot clear S3 in production");
+        this.logger.warn("Clearing S3...");
+        const batchSize = 1000;
+        const files: S3File[] = await this.storageService.listFiles() as S3File[];
+        for(let i: number = 0; i < files.length; i += batchSize){
+            const batch: S3File[] = files.slice(i, i + batchSize);
+            const deletePromises: Promise<void>[] = batch.map((file: S3File) => file.delete());
+            await Promise.all(deletePromises);
+        }
+        this.logger.warn("S3 cleared!");
     }
 
     async reDownloadEpisode(episodeId: number){

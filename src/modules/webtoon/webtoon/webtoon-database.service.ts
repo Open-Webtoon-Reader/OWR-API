@@ -1,20 +1,19 @@
-import CachedWebtoonModel from "./models/models/cached-webtoon.model";
-import EpisodeModel from "./models/models/episode.model";
-import EpisodeDataModel from "./models/models/episode-data.model";
-import EpisodeResponse from "./models/responses/episode.response";
-import EpisodeLineModel from "./models/models/episode-line.model";
+import MigrationInfosResponse from "../migration/models/responses/migration-infos.response";
 import LightWebtoonResponse from "./models/responses/light-webtoon-response";
-import WebtoonModel from "./models/models/webtoon.model";
-import WebtoonDataModel from "./models/models/webtoon-data.model";
+import CachedWebtoonModel from "./models/models/cached-webtoon.model";
 import {Injectable, Logger, NotFoundException} from "@nestjs/common";
+import EpisodeDataModel from "./models/models/episode-data.model";
+import EpisodeLineModel from "./models/models/episode-line.model";
+import WebtoonDataModel from "./models/models/webtoon-data.model";
+import EpisodeResponse from "./models/responses/episode.response";
+import WebtoonResponse from "./models/responses/webtoon-response";
+import {StorageService} from "../../storage/storage.service";
+import EpisodeModel from "./models/models/episode.model";
+import WebtoonModel from "./models/models/webtoon.model";
 import {PrismaService} from "../../misc/prisma.service";
 import ImageTypes from "./models/enums/image-types";
-import WebtoonResponse from "./models/responses/webtoon-response";
-import MigrationInfosResponse from "../migration/models/responses/migration-infos.response";
-import {FileService} from "../../file/file.service";
 import {ConfigService} from "@nestjs/config";
 import {Images} from "@prisma/client";
-import {StorageService} from "../../storage/storage.service";
 
 @Injectable()
 export class WebtoonDatabaseService{
@@ -24,7 +23,6 @@ export class WebtoonDatabaseService{
 
     constructor(
         private readonly prismaService: PrismaService,
-        private readonly fileService: FileService,
         private readonly configService: ConfigService,
         private readonly storageService: StorageService,
     ){}

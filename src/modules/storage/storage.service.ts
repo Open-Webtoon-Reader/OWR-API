@@ -23,7 +23,11 @@ export class StorageService{
     private getFileName(sum: string): string{
         if(this.s3Client)
             return `${sum.substring(0, 2)}/${sum}.webp`;
-        return `.storage/${sum.substring(0, 2)}/${sum}.webp`;
+        return `images/${sum.substring(0, 2)}/${sum}.webp`;
+    }
+
+    isS3(): boolean{
+        return !!this.s3Client;
     }
 
     async uploadBuffer(data: Buffer): Promise<string>{
@@ -68,33 +72,41 @@ export class StorageService{
     }
 
     async listFiles(take: number = Infinity, skip: number = 0): Promise<(BunFile | S3File)[]>{
-        const files: (BunFile | S3File)[] = [];
-        if(this.s3Client){
-            let continuationToken: string | undefined;
-            let remainingItems: number = take;
-            let totalSkipped: number = 0;
-            do{
-                const s3Files: S3ListObjectsResponse = await this.s3Client.list({
-                    maxKeys: Math.min(remainingItems + Math.max(0, skip - totalSkipped), 1000),
-                    continuationToken,
-                });
-                let itemsToProcess = s3Files.contents || [];
-                if(totalSkipped < skip){
-                    const skipInThisBatch: number = Math.min(skip - totalSkipped, itemsToProcess.length);
-                    itemsToProcess = itemsToProcess.slice(skipInThisBatch);
-                    totalSkipped += skipInThisBatch;
-                }
-                const itemsToTake: number = Math.min(remainingItems, itemsToProcess.length);
-                for(const file of itemsToProcess.slice(0, itemsToTake))
-                    files.push(this.s3Client.file(file.key));
-                remainingItems -= itemsToTake;
-                continuationToken = s3Files.nextContinuationToken;
-            }while(remainingItems > 0 && continuationToken);
-            return files;
-        }
+        if(this.s3Client)
+            return this.listS3Files(take, skip);
+        return this.listLocalFiles(take, skip);
+    }
+
+    async listLocalFiles(take: number = Infinity, skip: number = 0): Promise<BunFile[]>{
+        const files: BunFile[] = [];
         const glob = new Glob("**/*");
-        for(const filePath of glob.scanSync("./.storage"))
-            files.push(Bun.file(".storage/" + filePath));
+        for(const filePath of glob.scanSync("images"))
+            files.push(Bun.file("images/" + filePath));
         return files.slice(skip, take === Infinity ? undefined : take + skip);
+    }
+
+    async listS3Files(take: number = Infinity, skip: number = 0): Promise<S3File[]>{
+        const files: S3File[] = [];
+        let continuationToken: string | undefined;
+        let remainingItems: number = take;
+        let totalSkipped: number = 0;
+        do{
+            const s3Files: S3ListObjectsResponse = await this.s3Client.list({
+                maxKeys: Math.min(remainingItems + Math.max(0, skip - totalSkipped), 1000),
+                continuationToken,
+            });
+            let itemsToProcess = s3Files.contents || [];
+            if(totalSkipped < skip){
+                const skipInThisBatch: number = Math.min(skip - totalSkipped, itemsToProcess.length);
+                itemsToProcess = itemsToProcess.slice(skipInThisBatch);
+                totalSkipped += skipInThisBatch;
+            }
+            const itemsToTake: number = Math.min(remainingItems, itemsToProcess.length);
+            for(const file of itemsToProcess.slice(0, itemsToTake))
+                files.push(this.s3Client.file(file.key));
+            remainingItems -= itemsToTake;
+            continuationToken = s3Files.nextContinuationToken;
+        }while(remainingItems > 0 && continuationToken);
+        return files;
     }
 }
