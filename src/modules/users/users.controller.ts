@@ -1,4 +1,4 @@
-import {Body, Controller, Get, Param, Post, UseGuards} from "@nestjs/common";
+import {Body, Controller, Delete, Get, HttpCode, Param, Post, UseGuards} from "@nestjs/common";
 import {UserEntity} from "./models/entities/user.entity";
 import {LoginPayload} from "./models/payloads/login.payload";
 import {User} from "./decorators/user.decorator";
@@ -6,6 +6,8 @@ import {LoginDto} from "./models/dto/login.dto";
 import {ApiBearerAuth} from "@nestjs/swagger";
 import {UsersService} from "./users.service";
 import {AuthGuard} from "@nestjs/passport";
+import {HttpStatusCode} from "axios";
+import {EpisodeProgressionDto} from "./models/dto/episode-progression.dto";
 
 @Controller("user")
 export class UsersController{
@@ -54,10 +56,32 @@ export class UsersController{
         return await this.usersService.getEpisodeProgression(user, episodeId);
     }
 
-    @Post("progression/:episode_id")
+    @Post("progression/episode/:episode_id")
     @UseGuards(AuthGuard("jwt"))
     @ApiBearerAuth()
-    async setEpisodeProgression(@User() user: UserEntity, @Param("episode_id") episodeId: number, @Body("progression") progression: number): Promise<void>{
-        await this.usersService.setEpisodeProgression(user, episodeId, progression);
+    async setEpisodeProgression(@User() user: UserEntity, @Param("episode_id") episodeId: number, @Body() progression: EpisodeProgressionDto): Promise<void>{
+        await this.usersService.setEpisodeProgression(user, episodeId, progression.progression);
+    }
+
+    @Delete("progression")
+    @HttpCode(HttpStatusCode.NoContent)
+    @UseGuards(AuthGuard("jwt"))
+    @ApiBearerAuth()
+    async deleteAllProgressions(@User() user: UserEntity): Promise<void>{
+        await this.usersService.deleteAllProgressions(user);
+    }
+
+    @Delete("progression/webtoon/:webtoon_id")
+    @UseGuards(AuthGuard("jwt"))
+    @ApiBearerAuth()
+    async deleteWebtoonProgression(@User() user: UserEntity, @Param("webtoon_id") webtoonId: number): Promise<void>{
+        await this.usersService.deleteWebtoonProgression(user, webtoonId);
+    }
+
+    @Delete("progression/episode/:episode_id")
+    @UseGuards(AuthGuard("jwt"))
+    @ApiBearerAuth()
+    async deleteEpisodeProgression(@User() user: UserEntity, @Param("episode_id") episodeId: number): Promise<void>{
+        await this.usersService.deleteEpisodeProgression(user, episodeId);
     }
 }

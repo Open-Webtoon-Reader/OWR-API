@@ -3,7 +3,7 @@ import axios, {AxiosInstance} from "axios";
 import {Injectable} from "@nestjs/common";
 import {createHash, randomBytes} from "crypto";
 import * as JSZip from "jszip";
-import sharp from "sharp";
+import * as sharp from "sharp";
 import * as fs from "fs";
 
 @Injectable()

@@ -6,6 +6,7 @@ import {PrismaService} from "../misc/prisma.service";
 import {MiscService} from "../misc/misc.service";
 import {EpisodeProgressions, Images, Users} from "@prisma/client";
 import {JwtService} from "@nestjs/jwt";
+import {EpisodeProgressionPayload} from "./models/payloads/episode-progression.payload";
 
 @Injectable()
 export class UsersService{
@@ -109,11 +110,24 @@ export class UsersService{
         };
     }
 
-    async getWebtoonProgression(user: UserEntity, webtoonId: number){
-        // TODO
+    async getWebtoonProgression(user: UserEntity, webtoonId: number): Promise<EpisodeProgressionPayload[]>{
+        const episodeProgressions: EpisodeProgressions[] = await this.prismaService.episodeProgressions.findMany({
+            where: {
+                user_id: user.id,
+                episode: {
+                    webtoon_id: webtoonId,
+                },
+            },
+        });
+        if(!episodeProgressions.length)
+            return [];
+        return episodeProgressions.map((episodeProgression: EpisodeProgressions): EpisodeProgressionPayload => ({
+            episodeId: episodeProgression.episode_id,
+            progression: episodeProgression.progression,
+        }));
     }
 
-    async getEpisodeProgression(user: UserEntity, episodeId: number): Promise<number>{
+    async getEpisodeProgression(user: UserEntity, episodeId: number): Promise<EpisodeProgressionPayload>{
         const episodeProgression: EpisodeProgressions = await this.prismaService.episodeProgressions.findUnique({
             where: {
                 user_id_episode_id: {
@@ -124,11 +138,14 @@ export class UsersService{
         });
         if(!episodeProgression)
             throw new NotFoundException("Episode progression not found");
-        return episodeProgression.progression;
+        return {
+            episodeId,
+            progression: episodeProgression.progression,
+        } as EpisodeProgressionPayload;
     }
 
     async setEpisodeProgression(user: UserEntity, episodeId: number, progression: number){
-        const episodeProgression: EpisodeProgressions = await this.prismaService.episodeProgressions.findUnique({
+        const episodeProgression: EpisodeProgressions | undefined = await this.prismaService.episodeProgressions.findUnique({
             where: {
                 user_id_episode_id: {
                     user_id: user.id,
@@ -136,21 +153,52 @@ export class UsersService{
                 },
             },
         });
-        if(!episodeProgression)
-            throw new NotFoundException("Episode progression not found");
         if(progression < 0)
             throw new BadRequestException("Invalid progression");
-        if(progression < episodeProgression.progression)
+        if(progression < (episodeProgression?.progression || 0))
             throw new BadRequestException("New progression must be greater than existing one");
-        await this.prismaService.episodeProgressions.update({
+        await this.prismaService.episodeProgressions.upsert({
             where: {
                 user_id_episode_id: {
-                    user_id: episodeProgression.user_id,
-                    episode_id: episodeProgression.episode_id,
+                    user_id: user.id,
+                    episode_id: episodeId,
                 },
             },
-            data: {
+            create: {
+                user_id: user.id,
+                episode_id: episodeId,
                 progression,
+            },
+            update: {
+                progression,
+            },
+        });
+    }
+
+    async deleteAllProgressions(user: UserEntity){
+        await this.prismaService.episodeProgressions.deleteMany({
+            where: {
+                user_id: user.id,
+            },
+        });
+    }
+
+    async deleteWebtoonProgression(user: UserEntity, webtoonId: number){
+        await this.prismaService.episodeProgressions.deleteMany({
+            where: {
+                user_id: user.id,
+                episode: {
+                    webtoon_id: webtoonId,
+                },
+            },
+        });
+    }
+
+    async deleteEpisodeProgression(user: UserEntity, episodeId: number){
+        await this.prismaService.episodeProgressions.deleteMany({
+            where: {
+                user_id: user.id,
+                episode_id: episodeId,
             },
         });
     }
