@@ -23,9 +23,20 @@ model Users {
   admin                Boolean               @default(false)
   avatar_id            Int?                  @unique
   avatar               Images?               @relation(fields: [avatar_id], references: [id])
-  episode_progerssions EpisodeProgressions[]
+  episode_progressions EpisodeProgressions[]
+  webtoon_likes        WebtoonLikes[]
 
   @@map("users")
+}
+
+model WebtoonLikes {
+  user_id    String
+  user       Users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  webtoon_id Int
+  webtoon    Webtoons @relation(fields: [webtoon_id], references: [id], onDelete: Cascade)
+
+  @@id([user_id, webtoon_id])
+  @@map("webtoon_likes")
 }
 
 model EpisodeProgressions {
@@ -98,6 +109,7 @@ model Webtoons {
   updated_at           DateTime        @default(now()) @updatedAt
   genres               WebtoonGenres[]
   episodes             Episodes[]
+  webtoon_likes        WebtoonLikes[]
 
   @@unique([title, author, language])
   @@map("webtoons")
@@ -113,7 +125,7 @@ model Episodes {
   thumbnail            Images                @relation(fields: [thumbnail_id], references: [id])
   created_at           DateTime              @default(now())
   episode_images       EpisodeImages[]
-  episode_progerssions EpisodeProgressions[]
+  episode_progressions EpisodeProgressions[]
 
   @@unique([webtoon_id, number])
   @@map("episodes")
