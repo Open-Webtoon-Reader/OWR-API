@@ -202,4 +202,41 @@ export class UsersService{
             },
         });
     }
+
+    async getLikedWebtoons(user: UserEntity): Promise<number[]>{
+        const likedWebtoons = await this.prismaService.webtoonLikes.findMany({
+            where: {
+                user_id: user.id,
+            },
+            select: {
+                webtoon_id: true,
+            },
+        });
+        return likedWebtoons.map(likedWebtoon => likedWebtoon.webtoon_id);
+    }
+
+    async likeWebtoon(user: UserEntity, webtoonId: number): Promise<void>{
+        await this.prismaService.webtoonLikes.upsert({
+            where: {
+                user_id_webtoon_id: {
+                    user_id: user.id,
+                    webtoon_id: webtoonId,
+                },
+            },
+            create: {
+                user_id: user.id,
+                webtoon_id: webtoonId,
+            },
+            update: {},
+        });
+    }
+
+    async unlikeWebtoon(user: UserEntity, webtoonId: number): Promise<void>{
+        await this.prismaService.webtoonLikes.deleteMany({
+            where: {
+                user_id: user.id,
+                webtoon_id: webtoonId,
+            },
+        });
+    }
 }
