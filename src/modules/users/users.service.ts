@@ -216,6 +216,7 @@ export class UsersService{
     }
 
     async likeWebtoon(user: UserEntity, webtoonId: number): Promise<void>{
+        // Create a new like if it doesn't exist, or do nothing if it does
         await this.prismaService.webtoonLikes.upsert({
             where: {
                 user_id_webtoon_id: {
