@@ -1,4 +1,4 @@
-import {Body, Controller, Delete, Get, HttpCode, Param, Post, UseGuards} from "@nestjs/common";
+import {Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, UseGuards} from "@nestjs/common";
 import {UserEntity} from "./models/entities/user.entity";
 import {LoginPayload} from "./models/payloads/login.payload";
 import {User} from "./decorators/user.decorator";
@@ -6,7 +6,6 @@ import {LoginDto} from "./models/dto/login.dto";
 import {ApiBearerAuth} from "@nestjs/swagger";
 import {UsersService} from "./users.service";
 import {AuthGuard} from "@nestjs/passport";
-import {HttpStatusCode} from "axios";
 import {EpisodeProgressionDto} from "./models/dto/episode-progression.dto";
 
 @Controller("user")
@@ -64,7 +63,7 @@ export class UsersController{
     }
 
     @Delete("progression")
-    @HttpCode(HttpStatusCode.NoContent)
+    @HttpCode(HttpStatus.NO_CONTENT)
     @UseGuards(AuthGuard("jwt"))
     @ApiBearerAuth()
     async deleteAllProgressions(@User() user: UserEntity): Promise<void>{
@@ -83,5 +82,28 @@ export class UsersController{
     @ApiBearerAuth()
     async deleteEpisodeProgression(@User() user: UserEntity, @Param("episode_id") episodeId: number): Promise<void>{
         await this.usersService.deleteEpisodeProgression(user, episodeId);
+    }
+
+    @Get("likes/webtoons")
+    @UseGuards(AuthGuard("jwt"))
+    @ApiBearerAuth()
+    async getLikedWebtoons(@User() user: UserEntity): Promise<number[]>{
+        return await this.usersService.getLikedWebtoons(user);
+    }
+
+    @Post("likes/webtoon/:webtoon_id")
+    @HttpCode(HttpStatus.NO_CONTENT)
+    @UseGuards(AuthGuard("jwt"))
+    @ApiBearerAuth()
+    async likeWebtoon(@User() user: UserEntity, @Param("webtoon_id") webtoonId: number): Promise<void>{
+        await this.usersService.likeWebtoon(user, webtoonId);
+    }
+
+    @Delete("likes/webtoon/:webtoon_id")
+    @HttpCode(HttpStatus.NO_CONTENT)
+    @UseGuards(AuthGuard("jwt"))
+    @ApiBearerAuth()
+    async unlikeWebtoon(@User() user: UserEntity, @Param("webtoon_id") webtoonId: number): Promise<void>{
+        await this.usersService.unlikeWebtoon(user, webtoonId);
     }
 }
