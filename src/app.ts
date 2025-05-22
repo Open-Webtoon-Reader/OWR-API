@@ -31,6 +31,7 @@ async function loadServer(server: NestFastifyApplication){
     server.setGlobalPrefix(process.env.PREFIX || "");
     server.enableCors({
         origin: "*",
+        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     });
 
     // Middlewares
