@@ -1,14 +1,14 @@
 import {Body, Controller, Delete, Get, HttpCode, Post, UseGuards} from "@nestjs/common";
-import {ApiBearerAuth, ApiResponse, ApiTags} from "@nestjs/swagger";
+import CachedWebtoonModel from "../webtoon/models/models/cached-webtoon.model";
 import {DownloadManagerService} from "../webtoon/download-manager.service";
 import {AddWebtoonToQueueDto} from "./models/dto/add-webtoon-to-queue.dto";
+import {ApiBearerAuth, ApiResponse, ApiTags} from "@nestjs/swagger";
+import {AuthGuard} from "@nestjs/passport";
 import {HttpStatusCode} from "axios";
-import CachedWebtoonModel from "../webtoon/models/models/cached-webtoon.model";
-import {AdminGuard} from "./guard/admin.guard";
 
 @Controller("admin")
 @ApiTags("Admin")
-@UseGuards(AdminGuard)
+@UseGuards(AuthGuard("admin-jwt"))
 export class AdminController{
     constructor(
         private readonly downloadManagerService: DownloadManagerService,

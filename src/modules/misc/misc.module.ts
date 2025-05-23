@@ -4,9 +4,16 @@ import {PrismaService} from "./prisma.service";
 import {VersionController} from "./version.controller";
 
 @Module({
-    imports: [],
-    controllers: [VersionController],
-    providers: [MiscService, PrismaService],
-    exports: [MiscService, PrismaService],
+    controllers: [
+        VersionController,
+    ],
+    providers: [
+        MiscService,
+        PrismaService,
+    ],
+    exports: [
+        MiscService,
+        PrismaService,
+    ],
 })
 export class MiscModule{}
