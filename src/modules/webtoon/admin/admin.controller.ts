@@ -5,6 +5,7 @@ import {AddWebtoonToQueueDto} from "./models/dto/add-webtoon-to-queue.dto";
 import {ApiBearerAuth, ApiResponse, ApiTags} from "@nestjs/swagger";
 import {AuthGuard} from "@nestjs/passport";
 import {HttpStatusCode} from "axios";
+import {UsersService} from "../../users/users.service";
 
 @Controller("admin")
 @ApiTags("Admin")
@@ -12,6 +13,7 @@ import {HttpStatusCode} from "axios";
 export class AdminController{
     constructor(
         private readonly downloadManagerService: DownloadManagerService,
+        private readonly usersService: UsersService,
     ){}
 
     @Post("queue")
