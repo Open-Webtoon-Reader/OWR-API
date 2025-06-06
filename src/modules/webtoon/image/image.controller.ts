@@ -44,7 +44,7 @@ export class ImageController{
             throw new BadRequestException("Invalid sha256 sum");
         // Set header to image/webp and cache for 30 days
         res.header("Content-Type", "image/webp");
-        res.header("Cache-Control", "public, max-age=2592000000000");
+        res.header("Cache-Control", "public, max-age=2592000");
         try{
             const presignedUrl: string = await this.storageService.presign(imageSumDto.sum, 60 * 60 * 24 * 7);
             res.status(HttpStatusCode.Found);
