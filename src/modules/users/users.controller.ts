@@ -1,4 +1,4 @@
-import {Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, UseGuards} from "@nestjs/common";
+import {Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, UseGuards} from "@nestjs/common";
 import {UserEntity} from "./models/entities/user.entity";
 import {LoginPayload} from "./models/payloads/login.payload";
 import {User} from "./decorators/user.decorator";
@@ -7,6 +7,7 @@ import {ApiBearerAuth} from "@nestjs/swagger";
 import {UsersService} from "./users.service";
 import {AuthGuard} from "@nestjs/passport";
 import {EpisodeProgressionDto} from "./models/dto/episode-progression.dto";
+import {ChangePasswordDto} from "./models/dto/change-password.dto";
 
 @Controller("user")
 export class UsersController{
@@ -34,11 +35,20 @@ export class UsersController{
         return avatars;
     }
 
-    @Post("avatar/:sum")
+    @Patch("avatar/:sum")
     @UseGuards(AuthGuard("jwt"))
     @ApiBearerAuth()
+    @HttpCode(HttpStatus.NO_CONTENT)
     async setAvatar(@User() user: UserEntity, @Param("sum") sum: string): Promise<void>{
-        await this.usersService.setAvatar(user, sum);
+        return this.usersService.setAvatar(user, sum);
+    }
+
+    @Patch("password")
+    @UseGuards(AuthGuard("jwt"))
+    @ApiBearerAuth()
+    @HttpCode(HttpStatus.NO_CONTENT)
+    async changePassword(@User() user: UserEntity, @Body() changePasswordDto: ChangePasswordDto): Promise<void>{
+        return this.usersService.changePassword(user, changePasswordDto);
     }
 
     @Get("progression/webtoon/:webtoon_id")
@@ -92,17 +102,17 @@ export class UsersController{
     }
 
     @Post("likes/webtoon/:webtoon_id")
-    @HttpCode(HttpStatus.NO_CONTENT)
     @UseGuards(AuthGuard("jwt"))
     @ApiBearerAuth()
+    @HttpCode(HttpStatus.NO_CONTENT)
     async likeWebtoon(@User() user: UserEntity, @Param("webtoon_id") webtoonId: number): Promise<void>{
         await this.usersService.likeWebtoon(user, webtoonId);
     }
 
     @Delete("likes/webtoon/:webtoon_id")
-    @HttpCode(HttpStatus.NO_CONTENT)
     @UseGuards(AuthGuard("jwt"))
     @ApiBearerAuth()
+    @HttpCode(HttpStatus.NO_CONTENT)
     async unlikeWebtoon(@User() user: UserEntity, @Param("webtoon_id") webtoonId: number): Promise<void>{
         await this.usersService.unlikeWebtoon(user, webtoonId);
     }
