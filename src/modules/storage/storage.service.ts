@@ -35,11 +35,16 @@ export class StorageService{
         const fileName: string = this.getFileName(sum);
         this.logger.verbose(`Uploading file ${fileName}`);
         let file: BunFile | S3File;
-        if(this.s3Client)
+        if(this.s3Client){
             file = this.s3Client.file(fileName);
-        else
+            await file.write(data, {
+                // @ts-ignore
+                storageClass: process.env.S3_STORAGE_CLASS || "STANDARD",
+            });
+        }else{
             file = Bun.file(fileName);
-        await file.write(data);
+            await file.write(data);
+        }
         return sum;
     }
 
