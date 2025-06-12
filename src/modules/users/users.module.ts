@@ -32,5 +32,6 @@ import {AdminJwtStrategy} from "./strategies/admin-jwt.strategy";
         JwtStrategy,
         AdminJwtStrategy,
     ],
+    exports: [UsersService],
 })
 export class UsersModule{}

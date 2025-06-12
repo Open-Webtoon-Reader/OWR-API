@@ -1,4 +1,10 @@
-import {BadRequestException, Injectable, NotFoundException, UnauthorizedException} from "@nestjs/common";
+import {
+    BadRequestException,
+    ConflictException,
+    Injectable,
+    NotFoundException,
+    UnauthorizedException,
+} from "@nestjs/common";
 import ImageTypes from "../webtoon/webtoon/models/enums/image-types";
 import {LoginPayload} from "./models/payloads/login.payload";
 import {UserEntity} from "./models/entities/user.entity";
@@ -7,6 +13,8 @@ import {MiscService} from "../misc/misc.service";
 import {EpisodeProgressions, Images, Users} from "@prisma/client";
 import {JwtService} from "@nestjs/jwt";
 import {EpisodeProgressionPayload} from "./models/payloads/episode-progression.payload";
+import {CreateUserDto} from "./models/dto/create-user.dto";
+import {ChangePasswordDto} from "./models/dto/change-password.dto";
 
 @Injectable()
 export class UsersService{
@@ -25,6 +33,70 @@ export class UsersService{
             avatar: avatar,
             jwtId: user.jwt_id,
             admin: user.admin,
+        });
+    }
+
+    async createUser(userDto: CreateUserDto): Promise<UserEntity>{
+        // Check if the user already exists
+        const existingUser = await this.prismaService.users.findFirst({
+            where: {
+                OR: [
+                    {username: userDto.username},
+                    {email: userDto.email},
+                ],
+            },
+        });
+        if(existingUser)
+            throw new ConflictException("User with this username or email already exists");
+        // Create the user
+        const hashedPassword = this.miscService.hashPassword(userDto.password);
+        const user = await this.prismaService.users.create({
+            data: {
+                id: Bun.randomUUIDv7(),
+                username: userDto.username,
+                email: userDto.email,
+                password: hashedPassword,
+                admin: false,
+                jwt_id: this.miscService.generateRandomBytes(16),
+            },
+            include: {
+                avatar: true,
+            },
+        });
+        return this.toUserEntity(user, user.avatar?.sum);
+    }
+
+    async changePassword(user: UserEntity, changePasswordDto: ChangePasswordDto): Promise<void>{
+        // Check if the old password is valid
+        if(changePasswordDto.oldPassword && !this.miscService.comparePassword(changePasswordDto.oldPassword, user.password))
+            throw new UnauthorizedException("Invalid old password");
+        // Check if the new password is valid
+        if(changePasswordDto.newPassword.length < 8)
+            throw new BadRequestException("New password must be at least 8 characters long");
+        // Hash the new password
+        const hashedPassword = this.miscService.hashPassword(changePasswordDto.newPassword);
+        // Update the user's password
+        await this.prismaService.users.update({
+            where: {
+                id: user.id,
+            },
+            data: {
+                password: hashedPassword,
+            },
+        });
+    }
+
+    async changeUserPassword(userId: string, newPassword: string): Promise<void>{
+        // Hash the new password
+        const hashedPassword = this.miscService.hashPassword(newPassword);
+        // Update the user's password
+        await this.prismaService.users.update({
+            where: {
+                id: userId,
+            },
+            data: {
+                password: hashedPassword,
+            },
         });
     }
 
@@ -78,6 +150,33 @@ export class UsersService{
         if(!user)
             throw new NotFoundException("User not found");
         return this.toUserEntity(user, user.avatar?.sum);
+    }
+
+    async getUsers(): Promise<UserEntity[]>{
+        const users = await this.prismaService.users.findMany({
+            include: {
+                avatar: true,
+            },
+        });
+        if(!users.length)
+            return [];
+        return users.map((user): UserEntity => this.toUserEntity(user, user.avatar?.sum));
+    }
+
+    async deleteUserById(userId: string): Promise<void>{
+        const user = await this.prismaService.users.findUnique({
+            where: {
+                id: userId,
+            },
+        });
+        if(!user)
+            throw new NotFoundException("User not found");
+        // Delete the user
+        await this.prismaService.users.delete({
+            where: {
+                id: userId,
+            },
+        });
     }
 
     async login(usernameOrEmail: string, password: string): Promise<LoginPayload>{
