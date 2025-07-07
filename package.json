@@ -45,7 +45,7 @@
         "@stylistic/eslint-plugin": "^4.4.1",
         "@types/bun": "^1.2.15",
         "@types/jsdom": "^21.1.7",
-        "@types/node": "^22.15.30",
+        "@types/node": "^24.0.10",
         "@types/passport-jwt": "^4.0.1",
         "@typescript-eslint/parser": "^8.33.1",
         "eslint": "^9.28.0",
