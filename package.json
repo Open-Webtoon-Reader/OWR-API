@@ -42,7 +42,7 @@
     },
     "devDependencies": {
         "@nestjs/schematics": "^11.0.5",
-        "@stylistic/eslint-plugin": "^4.4.1",
+        "@stylistic/eslint-plugin": "^5.2.2",
         "@types/bun": "^1.2.15",
         "@types/jsdom": "^21.1.7",
         "@types/node": "^22.15.30",
