@@ -55,7 +55,13 @@ export class WebtoonCanvasProvider{
         genre: string,
     ): Promise<number>{
         const url = `https://www.webtoons.com/${language}/canvas/list?genreTab=${genre.toUpperCase()}&page=999999999`;
-        const response = await this.miscService.getAxiosInstance().get(url);
+        const response = await this.miscService.axiosWithHardTimeout(
+            signal =>
+                this.miscService.getAxiosInstance().get(url, {
+                    signal,
+                }),
+            20000,
+        );
         const document = new JSDOM(response.data).window.document;
 
         const paginate = document.querySelector("div.paginate");
@@ -118,7 +124,13 @@ export class WebtoonCanvasProvider{
 
     private async getWebtoonsFromGenrePage(language: string, genre: string, page: number): Promise<CachedWebtoonModel[]>{
         const url = `https://www.webtoons.com/${language}/canvas/list?genreTab=${genre.toUpperCase()}&sortOrder=LIKEIT&page=${page}`;
-        const response = await this.miscService.getAxiosInstance().get(url);
+        const response = await this.miscService.axiosWithHardTimeout(
+            signal =>
+                this.miscService.getAxiosInstance().get(url, {
+                    signal,
+                }),
+            20000,
+        );
         const document = new JSDOM(response.data).window.document;
         const cards = document.querySelector("div.challenge_lst")?.querySelector("ul")?.querySelectorAll("li");
         if(!cards) throw new NotFoundException(`No cards found for genre: ${genre}`);

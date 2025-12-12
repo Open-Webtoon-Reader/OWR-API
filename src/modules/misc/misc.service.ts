@@ -3,7 +3,7 @@ import axios, {AxiosInstance} from "axios";
 import {Injectable} from "@nestjs/common";
 import {createHash, randomBytes} from "crypto";
 import * as JSZip from "jszip";
-import sharp from "sharp";
+import * as sharp from "sharp";
 import * as fs from "fs";
 
 @Injectable()
@@ -51,6 +51,21 @@ export class MiscService{
     getAxiosInstance(){
         this.randomUserAgentChange(0.1);
         return this.axiosInstance;
+    }
+
+    async axiosWithHardTimeout<T>(
+        // eslint-disable-next-line @/no-unused-vars
+        promiseFactory: (signal: AbortSignal) => Promise<T>,
+        ms: number,
+    ): Promise<T>{
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), ms);
+
+        try{
+            return await promiseFactory(controller.signal);
+        }finally{
+            clearTimeout(timer);
+        }
     }
 
     randomInt(min: number, max: number): number{

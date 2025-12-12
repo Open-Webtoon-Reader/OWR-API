@@ -42,18 +42,36 @@ export class WebtoonProvider{
     private async getWebtoonsFromLanguage(language: string): Promise<CachedWebtoonModel[]>{
         const languageWebtoons: CachedWebtoonModel[] = [];
         const promises: Promise<CachedWebtoonModel[]>[] = [];
-        for(const genre of this.genres)
-            promises.push(this.getWebtoonsFromGenre(language, genre));
+        for(const genre of this.genres){
+            promises.push((async() => {
+                while(true){
+                    try{
+                        return await this.getWebtoonsFromGenre(language, genre);
+                    }catch(err){
+                        this.logger.error(`Erreur lors de la récupération du genre "${genre}":`, err);
+                        await new Promise(resolve => setTimeout(resolve, 5000));
+                    }
+                }
+            })());
+        }
         const genreResults = await Promise.all(promises);
-        for(const webtoons of genreResults)
+        for(const webtoons of genreResults){
             languageWebtoons.push(...webtoons);
+        }
+
         return this.removeDuplicateWebtoons(languageWebtoons);
     }
 
     private async getWebtoonsFromGenre(language: string, genre: string): Promise<CachedWebtoonModel[]>{
         const mobileThumbnails = await this.getWebtoonThumbnailFromGenre(language, genre);
         const url = `https://www.webtoons.com/${language}/genres/${genre}`;
-        const response = await this.miscService.getAxiosInstance().get(url);
+        const response = await this.miscService.axiosWithHardTimeout(
+            signal =>
+                this.miscService.getAxiosInstance().get(url, {
+                    signal,
+                }),
+            20000,
+        );
         const document = new JSDOM(response.data).window.document;
         const cards = document.querySelector("ul.webtoon_list")?.querySelectorAll("li");
         if(!cards){
@@ -93,11 +111,16 @@ export class WebtoonProvider{
     private async getWebtoonThumbnailFromGenre(language: string, genre: string): Promise<Record<string, string>[]>{
         const mobileThumbnails: Record<string, string>[] = [];
         const mobileUrl = `https://www.webtoons.com/${language}/genres/${genre}`.replace("www.webtoons", "m.webtoons") + "?webtoon-platform-redirect=true";
-        const mobileResponse = await this.miscService.getAxiosInstance().get(mobileUrl, {
-            headers: {
-                "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
-            },
-        });
+        const mobileResponse = await this.miscService.axiosWithHardTimeout(
+            signal =>
+                this.miscService.getAxiosInstance().get(mobileUrl, {
+                    signal,
+                    headers: {
+                        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
+                    },
+                }),
+            20000,
+        );
         const mobileDocument = new JSDOM((mobileResponse).data).window.document;
         const className = `genre_${genre.toUpperCase()}_list`;
         const wList = mobileDocument.querySelector(`ul.${className}`)?.querySelectorAll("li");
@@ -126,24 +149,43 @@ export class WebtoonProvider{
     async getWebtoonInfos(webtoon: CachedWebtoonModel): Promise<WebtoonModel>{
         const url = webtoon.link;
         const mobileUrl = url.replace("www.webtoons", "m.webtoons") + "&webtoon-platform-redirect=true";
-        const [response, mobileResponse] = await Promise.all([
-            this.miscService.getAxiosInstance().get(url),
-            this.miscService.getAxiosInstance().get(mobileUrl, {
-                headers: {
-                    "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
-                },
-            }),
-        ]);
-        const document = new JSDOM(response.data).window.document;
-        const mobileDocument = new JSDOM(mobileResponse.data).window.document;
-        const rawEpCount = document.querySelector("ul#_listUl li a span.tx")?.textContent?.replace("#", "");
-        if(!rawEpCount) throw new NotFoundException(`No episode number found for webtoon: ${url}`);
-        const epCount = parseInt(rawEpCount);
-        return {
-            ...webtoon,
-            epCount,
-            banner: await this.parseWebtoonBanner(document, mobileDocument),
-        } as WebtoonModel;
+
+        while(true){
+            try{
+                const [response, mobileResponse] = await Promise.all([
+                    this.miscService.axiosWithHardTimeout(
+                        signal =>
+                            this.miscService.getAxiosInstance().get(url, {signal}),
+                        20000,
+                    ),
+                    this.miscService.axiosWithHardTimeout(
+                        signal =>
+                            this.miscService.getAxiosInstance().get(mobileUrl, {
+                                signal,
+                                headers: {
+                                    "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
+                                },
+                            }),
+                        20000,
+                    ),
+                ]);
+
+                const document = new JSDOM(response.data).window.document;
+                const mobileDocument = new JSDOM(mobileResponse.data).window.document;
+                const rawEpCount = document.querySelector("ul#_listUl li a span.tx")?.textContent?.replace("#", "");
+                if(!rawEpCount) throw new NotFoundException(`No episode number found for webtoon: ${url}`);
+                const epCount = parseInt(rawEpCount);
+
+                return {
+                    ...webtoon,
+                    epCount,
+                    banner: await this.parseWebtoonBanner(document, mobileDocument),
+                } as WebtoonModel;
+            }catch(err){
+                this.logger.error(`Erreur lors de la récupération des infos du webtoon "${webtoon.link}":`, err);
+                await new Promise(resolve => setTimeout(resolve, 5000));
+            }
+        }
     }
 
     private async parseWebtoonBanner(webtoonDom: Document, mobileWebtoonDom: Document): Promise<WebtoonBannerModel>{
@@ -172,7 +214,13 @@ export class WebtoonProvider{
             error = undefined;
             url = baseUrl + `/x/viewer?title_no=${webtoon.id}&episode_no=${currentEpisode}`;
             try{
-                response = await this.miscService.getAxiosInstance().get(url);
+                response = await this.miscService.axiosWithHardTimeout(
+                    signal =>
+                        this.miscService.getAxiosInstance().get(url, {
+                            signal,
+                        }),
+                    20000,
+                );
             }catch(e: any){
                 this.logger.debug(`Failed to fetch episode ${currentEpisode}, trying episode  ${currentEpisode + 1}`);
                 error = e;
@@ -207,7 +255,13 @@ export class WebtoonProvider{
     async getEpisodeLinks(webtoon: CachedWebtoonModel, episode: EpisodeModel): Promise<string[]>{
         const baseUrl = webtoon.link.replace(`/list?title_no=${webtoon.id}`, "");
         const url = baseUrl + `/episode-${episode.number}/viewer?title_no=${webtoon.id}&episode_no=${episode.number}`;
-        const response = await this.miscService.getAxiosInstance().get(url);
+        const response = await this.miscService.axiosWithHardTimeout(
+            signal =>
+                this.miscService.getAxiosInstance().get(url, {
+                    signal,
+                }),
+            20000,
+        );
         const htmlContent = response.data;
         const dom = new JSDOM(htmlContent);
         const document = dom.window.document;
