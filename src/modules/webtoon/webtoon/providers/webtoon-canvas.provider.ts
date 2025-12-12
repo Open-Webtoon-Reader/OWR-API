@@ -50,22 +50,31 @@ export class WebtoonCanvasProvider{
         return this.removeDuplicateWebtoons(languageWebtoons);
     }
 
-    private async getPageCountFromGenre(language: string, genre: string): Promise<number>{
+    private async getPageCountFromGenre(
+        language: string,
+        genre: string,
+    ): Promise<number>{
         const url = `https://www.webtoons.com/${language}/canvas/list?genreTab=${genre.toUpperCase()}&page=999999999`;
         const response = await this.miscService.getAxiosInstance().get(url);
         const document = new JSDOM(response.data).window.document;
-        // Check if page is ALL
-        const header = document.querySelector("ul#_genreTabList").querySelectorAll("li")[1].querySelector("a");
-        if(header.ariaCurrent !== "false")
-            return 0;
-        // Fetch page count
-        const lastLink = document.querySelector("div.paginate").querySelector("a:last-of-type");
-        if(!lastLink) throw new NotFoundException(`No pagination found for genre: ${genre}`);
-        const lastSpan = lastLink.querySelector("span");
-        if(!lastSpan) throw new NotFoundException(`No span found in the last link for genre: ${genre}`);
-        const pageCount = parseInt(lastSpan.textContent?.trim() || "", 10);
-        if(isNaN(pageCount)) throw new NotFoundException(`Invalid page count for genre: ${genre}`);
-        return pageCount;
+
+        const paginate = document.querySelector("div.paginate");
+        if(!paginate){
+            throw new NotFoundException(`No pagination found for genre: ${genre}`);
+        }
+
+        const pageNumbers = Array.from(
+            paginate.querySelectorAll("a span"),
+        )
+            .map(span => span.textContent?.trim())
+            .filter(text => text && /^\d+$/.test(text))
+            .map(text => Number(text));
+
+        if(pageNumbers.length === 0){
+            throw new NotFoundException(`No page numbers found for genre: ${genre}`);
+        }
+
+        return Math.max(...pageNumbers);
     }
 
     private async getWebtoonsFromGenre(language: string, genre: string): Promise<CachedWebtoonModel[]>{
@@ -77,6 +86,7 @@ export class WebtoonCanvasProvider{
                 pageCount = await this.getPageCountFromGenre(language, genre);
             }catch(e){
                 error = e;
+                console.log(e);
                 await new Promise(resolve => setTimeout(resolve, 5000));
             }
         }while(error);

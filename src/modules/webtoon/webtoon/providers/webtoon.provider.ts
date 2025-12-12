@@ -55,15 +55,18 @@ export class WebtoonProvider{
         const url = `https://www.webtoons.com/${language}/genres/${genre}`;
         const response = await this.miscService.getAxiosInstance().get(url);
         const document = new JSDOM(response.data).window.document;
-        const cards = document.querySelector("ul.card_lst")?.querySelectorAll("li");
-        if(!cards) throw new NotFoundException(`No cards found for genre: ${genre}`);
+        const cards = document.querySelector("ul.webtoon_list")?.querySelectorAll("li");
+        if(!cards){
+            this.logger.warn(`No webtoons found for genre: ${genre} in language: ${language}`);
+            return [];
+        }
         const webtoons = [];
         for(const li of cards){
             const a = li.querySelector("a");
             if(!a) continue;
-            const title = a.querySelector("p.subj")?.textContent;
-            const author = a.querySelector("p.author")?.textContent;
-            const stars = a.querySelector("p.grade_area")?.querySelector("em")?.textContent;
+            const title = a.querySelector(".info_text .title")?.textContent;
+            const author = a.querySelector(".info_text .author")?.textContent;
+            const stars = a.querySelector(".info_text .view_count")?.textContent;
             const link = a.href;
             const id = link.split("?title_no=")[1];
             let thumbnail = mobileThumbnails.find(t => t.name === title)?.thumbnail;
