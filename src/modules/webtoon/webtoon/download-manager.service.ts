@@ -105,6 +105,7 @@ export class DownloadManagerService{
                         error = false;
                     }catch (_: any){
                         this.logger.warn(`Error fetching episode ${epList[i].number} of ${this.downloadQueue.getCurrentDownload().title}. Retrying...`);
+                        await new Promise(resolve => setTimeout(resolve, 3000));
                         error = true;
                     }
                 }
@@ -116,6 +117,7 @@ export class DownloadManagerService{
                         downloaded = true;
                     }catch(_: any){
                         this.logger.warn(`Error downloading episode ${epList[i].number} of ${this.downloadQueue.getCurrentDownload().title}. Retrying...`);
+                        await new Promise(resolve => setTimeout(resolve, 3000));
                     }
                 }
                 await this.webtoonDatabaseService.saveEpisode(currentDownload, epList[i], episodeData, i + 1);
