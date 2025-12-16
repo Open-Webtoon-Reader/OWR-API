@@ -97,7 +97,17 @@ export class DownloadManagerService{
                 if(!this.downloadQueue.getCurrentDownload()) // If current download is cleared, stop downloading
                     break;
                 this.downloadGatewayService.onDownloadProgress(i / epList.length * 100);
-                const epImageLinks: string[] = await this.webtoonParserService.getEpisodeLinks(this.downloadQueue.getCurrentDownload(), epList[i]);
+                let epImageLinks: string[];
+                let error = false;
+                while(!error){
+                    try{
+                        epImageLinks = await this.webtoonParserService.getEpisodeLinks(this.downloadQueue.getCurrentDownload(), epList[i]);
+                        error = false;
+                    }catch (_: any){
+                        this.logger.warn(`Error fetching episode ${epList[i].number} of ${this.downloadQueue.getCurrentDownload().title}. Retrying...`);
+                        error = true;
+                    }
+                }
                 let downloaded = false;
                 let episodeData: EpisodeDataModel;
                 while(!downloaded){
