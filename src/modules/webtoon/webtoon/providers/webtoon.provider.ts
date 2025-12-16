@@ -182,7 +182,7 @@ export class WebtoonProvider{
                     banner: await this.parseWebtoonBanner(document, mobileDocument),
                 } as WebtoonModel;
             }catch(err){
-                this.logger.error(`Erreur lors de la récupération des infos du webtoon "${webtoon.link}":`, err);
+                this.logger.error(`Error while retrieving information for the webtoon "${webtoon.link}":`, err);
                 await new Promise(resolve => setTimeout(resolve, 5000));
             }
         }
