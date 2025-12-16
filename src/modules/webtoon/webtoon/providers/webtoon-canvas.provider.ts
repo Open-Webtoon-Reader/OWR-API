@@ -64,6 +64,10 @@ export class WebtoonCanvasProvider{
         );
         const document = new JSDOM(response.data).window.document;
 
+        // Check if genre page exists or is just "all"
+        if(document.querySelector("ul.snb")?.querySelectorAll("li")[1]?.className.includes("is_selected"))
+            return -1;
+
         const paginate = document.querySelector("div.paginate");
         if(!paginate){
             throw new NotFoundException(`No pagination found for genre: ${genre}`);
@@ -90,6 +94,10 @@ export class WebtoonCanvasProvider{
             error = undefined;
             try{
                 pageCount = await this.getPageCountFromGenre(language, genre);
+                if(pageCount === -1){
+                    this.logger.warn(`(Webtoon Canvas) [${language}] Genre page does not exist (redirected to All): ${genre}`);
+                    return [];
+                }
             }catch(e){
                 error = e;
                 console.log(e);

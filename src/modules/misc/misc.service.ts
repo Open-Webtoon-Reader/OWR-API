@@ -116,12 +116,17 @@ export class MiscService{
     }
 
     async downloadImage(url: string, referer: string = "https://www.webtoons.com/fr/"): Promise<Buffer>{
-        const response = await this.getAxiosInstance().get(url, {
-            responseType: "arraybuffer",
-            headers: {
-                Referer: referer,
-            },
-        });
+        const response = await this.axiosWithHardTimeout(
+            signal =>
+                this.getAxiosInstance().get(url, {
+                    signal,
+                    responseType: "arraybuffer",
+                    headers: {
+                        Referer: referer,
+                    },
+                }),
+            20000,
+        );
         return response.data as Buffer;
     }
 
