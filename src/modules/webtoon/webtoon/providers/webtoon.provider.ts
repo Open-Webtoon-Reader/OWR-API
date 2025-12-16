@@ -48,7 +48,7 @@ export class WebtoonProvider{
                     try{
                         return await this.getWebtoonsFromGenre(language, genre);
                     }catch(err){
-                        this.logger.error(`Erreur lors de la récupération du genre "${genre}":`, err);
+                        this.logger.error(`Error while retrieving genre "${genre}":`, err);
                         await new Promise(resolve => setTimeout(resolve, 5000));
                     }
                 }
