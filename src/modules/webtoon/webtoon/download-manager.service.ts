@@ -98,15 +98,14 @@ export class DownloadManagerService{
                     break;
                 this.downloadGatewayService.onDownloadProgress(i / epList.length * 100);
                 let epImageLinks: string[];
-                let error = false;
-                while(!error){
+                let fetched = false;
+                while(!fetched){
                     try{
                         epImageLinks = await this.webtoonParserService.getEpisodeLinks(this.downloadQueue.getCurrentDownload(), epList[i]);
-                        error = false;
+                        fetched = true;
                     }catch (_: any){
                         this.logger.warn(`Error fetching episode ${epList[i].number} of ${this.downloadQueue.getCurrentDownload().title}. Retrying...`);
                         await new Promise(resolve => setTimeout(resolve, 3000));
-                        error = true;
                     }
                 }
                 let downloaded = false;

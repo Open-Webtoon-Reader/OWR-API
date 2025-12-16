@@ -32,11 +32,11 @@ export class WebtoonDownloaderService{
         for(let i = 0; i < imageUrls.length; i++){
             const url = imageUrls[i];
             let image: Buffer;
-            let error = false;
-            while(!error){
+            let fetched = false;
+            while(!fetched){
                 try{
                     image = await this.miscService.downloadImage(url, episode.link);
-                    error = true;
+                    fetched = true;
                 }catch(_: any){
                     this.logger.warn(`Error downloading image ${i + 1} for episode ${episode.number}, retrying...`);
                     await new Promise(resolve => setTimeout(resolve, this.miscService.randomInt(500, 1500)));
