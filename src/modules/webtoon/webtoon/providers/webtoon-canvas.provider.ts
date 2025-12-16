@@ -100,7 +100,7 @@ export class WebtoonCanvasProvider{
                 }
             }catch(e){
                 error = e;
-                console.log(e);
+                this.logger.error(`(Webtoon Canvas) [${language}] Error while getting page count from genre: ${genre} - ${e.message}`, e.stack);
                 await new Promise(resolve => setTimeout(resolve, 5000));
             }
         }while(error);
