@@ -31,7 +31,17 @@ export class WebtoonDownloaderService{
 
         for(let i = 0; i < imageUrls.length; i++){
             const url = imageUrls[i];
-            const image = await this.miscService.downloadImage(url, episode.link);
+            let image: Buffer;
+            let error = false;
+            while(!error){
+                try{
+                    image = await this.miscService.downloadImage(url, episode.link);
+                    error = true;
+                }catch(_: any){
+                    this.logger.warn(`Error downloading image ${i + 1} for episode ${episode.number}, retrying...`);
+                    await new Promise(resolve => setTimeout(resolve, this.miscService.randomInt(500, 1500)));
+                }
+            }
             conversionPromises.push(this.miscService.convertImageToWebp(image));
             downloadedCount++;
             await new Promise(resolve => setTimeout(resolve, this.miscService.randomInt(50, 200)));

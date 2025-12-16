@@ -98,7 +98,16 @@ export class DownloadManagerService{
                     break;
                 this.downloadGatewayService.onDownloadProgress(i / epList.length * 100);
                 const epImageLinks: string[] = await this.webtoonParserService.getEpisodeLinks(this.downloadQueue.getCurrentDownload(), epList[i]);
-                const episodeData: EpisodeDataModel = await this.webtoonDownloaderService.downloadEpisode(epList[i], epImageLinks);
+                let downloaded = false;
+                let episodeData: EpisodeDataModel;
+                while(!downloaded){
+                    try{
+                        episodeData = await this.webtoonDownloaderService.downloadEpisode(epList[i], epImageLinks);
+                        downloaded = true;
+                    }catch(_: any){
+                        this.logger.warn(`Error downloading episode ${epList[i].number} of ${this.downloadQueue.getCurrentDownload().title}. Retrying...`);
+                    }
+                }
                 await this.webtoonDatabaseService.saveEpisode(currentDownload, epList[i], episodeData, i + 1);
             }
         }
