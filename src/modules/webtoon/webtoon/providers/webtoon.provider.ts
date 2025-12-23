@@ -39,6 +39,133 @@ export class WebtoonProvider{
         return webtoons;
     }
 
+    async getWebtoonInfos(webtoon: CachedWebtoonModel): Promise<WebtoonModel>{
+        const url = webtoon.link;
+        const mobileUrl = url.replace("www.webtoons", "m.webtoons") + "&webtoon-platform-redirect=true";
+
+        while(true){
+            try{
+                const [response, mobileResponse] = await Promise.all([
+                    this.miscService.axiosWithHardTimeout(
+                        signal =>
+                            this.miscService.getAxiosInstance().get(url, {signal}),
+                        20000,
+                    ),
+                    this.miscService.axiosWithHardTimeout(
+                        signal =>
+                            this.miscService.getAxiosInstance().get(mobileUrl, {
+                                signal,
+                                headers: {
+                                    "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
+                                },
+                            }),
+                        20000,
+                    ),
+                ]);
+
+                const document = new JSDOM(response.data).window.document;
+                const mobileDocument = new JSDOM(mobileResponse.data).window.document;
+                const rawEpCount = document.querySelector("ul#_listUl li a span.tx")?.textContent?.replace("#", "");
+                if(!rawEpCount) throw new NotFoundException(`No episode number found for webtoon: ${url}`);
+                const epCount = parseInt(rawEpCount);
+
+                return {
+                    ...webtoon,
+                    epCount,
+                    banner: await this.parseWebtoonBanner(document, mobileDocument),
+                } as WebtoonModel;
+            }catch(err){
+                this.logger.error(`Error while retrieving information for the webtoon "${webtoon.link}":`, err);
+                await new Promise(resolve => setTimeout(resolve, 5000));
+            }
+        }
+    }
+
+    async getEpisodes(webtoon: CachedWebtoonModel): Promise<EpisodeModel[]>{
+        const baseUrl: string = webtoon.link.replace(`/list?title_no=${webtoon.id}`, "");
+        let url: string;
+        let response: AxiosResponse;
+        let error: Error | undefined;
+        let currentEpisode: number = 1;
+        let retries = 0;
+        // Retry 3 times if request fails before skipping to next episode
+        do{
+            error = undefined;
+            url = baseUrl + `/x/viewer?title_no=${webtoon.id}&episode_no=${currentEpisode}`;
+            try{
+                response = await this.miscService.axiosWithHardTimeout(
+                    signal =>
+                        this.miscService.getAxiosInstance().get(url, {
+                            signal,
+                        }),
+                    20000,
+                );
+                retries = 0;
+            }catch(e: any){
+                retries++;
+                this.logger.debug(`Retry ${retries}/3 pour l\`épisode ${currentEpisode}`);
+                if(retries < 3){
+                    error = e;
+                    await new Promise(resolve => setTimeout(resolve, 5000));
+                    continue;
+                }
+                this.logger.debug(`Échec après 3 tentatives, passage à l\`épisode ${currentEpisode + 1}`);
+                error = e;
+                retries = 0;
+                currentEpisode++;
+                await new Promise(resolve => setTimeout(resolve, 5000));
+            }
+        }while(error);
+        const document = new JSDOM(response.data).window.document;
+        const epUl = document.querySelector("div.episode_cont ul");
+        const epList = epUl?.querySelectorAll("li");
+        if(!epList) throw new NotFoundException(`No episodes found for webtoon: ${url}`);
+        const episodes: EpisodeModel[] = [];
+        for(const li of epList){
+            const a = li.querySelector("a");
+            if(!a) continue;
+            const link = a.href;
+            const thumbnail = a.querySelector("span.thmb img")?.getAttribute("data-url");
+            const title = a.querySelector("span.subj")?.textContent;
+            if(!title || !link || !thumbnail)
+                throw new NotFoundException(`Missing data for episode: ${url}`);
+            episodes.push({
+                link,
+                thumbnail,
+                title,
+                number: currentEpisode,
+            } as EpisodeModel);
+            currentEpisode++;
+        }
+        return episodes;
+    }
+
+    async getEpisodeLinks(webtoon: CachedWebtoonModel, episode: EpisodeModel): Promise<string[]>{
+        const baseUrl = webtoon.link.replace(`/list?title_no=${webtoon.id}`, "");
+        const url = baseUrl + `/episode-${episode.number}/viewer?title_no=${webtoon.id}&episode_no=${episode.number}`;
+        const response = await this.miscService.axiosWithHardTimeout(
+            signal =>
+                this.miscService.getAxiosInstance().get(url, {
+                    signal,
+                }),
+            20000,
+        );
+        const htmlContent = response.data;
+        const dom = new JSDOM(htmlContent);
+        const document = dom.window.document;
+        const imagesNode = document.querySelector("div#_imageList");
+        const images = imagesNode?.querySelectorAll("img");
+        if(!images) throw new NotFoundException(`No images found for episode: ${url}`);
+        const links: string[] = [];
+        for(let i = 0; i < images.length; i++){
+            const image = images[i];
+            const link = image.getAttribute("data-url");
+            if(!link) throw new NotFoundException(`No link found for image ${i + 1} in episode: ${url}`);
+            links.push(link);
+        }
+        return links;
+    }
+
     private async getWebtoonsFromLanguage(language: string): Promise<CachedWebtoonModel[]>{
         const languageWebtoons: CachedWebtoonModel[] = [];
         const promises: Promise<CachedWebtoonModel[]>[] = [];
@@ -146,48 +273,6 @@ export class WebtoonProvider{
         return webtoonsWithoutDuplicates;
     }
 
-    async getWebtoonInfos(webtoon: CachedWebtoonModel): Promise<WebtoonModel>{
-        const url = webtoon.link;
-        const mobileUrl = url.replace("www.webtoons", "m.webtoons") + "&webtoon-platform-redirect=true";
-
-        while(true){
-            try{
-                const [response, mobileResponse] = await Promise.all([
-                    this.miscService.axiosWithHardTimeout(
-                        signal =>
-                            this.miscService.getAxiosInstance().get(url, {signal}),
-                        20000,
-                    ),
-                    this.miscService.axiosWithHardTimeout(
-                        signal =>
-                            this.miscService.getAxiosInstance().get(mobileUrl, {
-                                signal,
-                                headers: {
-                                    "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
-                                },
-                            }),
-                        20000,
-                    ),
-                ]);
-
-                const document = new JSDOM(response.data).window.document;
-                const mobileDocument = new JSDOM(mobileResponse.data).window.document;
-                const rawEpCount = document.querySelector("ul#_listUl li a span.tx")?.textContent?.replace("#", "");
-                if(!rawEpCount) throw new NotFoundException(`No episode number found for webtoon: ${url}`);
-                const epCount = parseInt(rawEpCount);
-
-                return {
-                    ...webtoon,
-                    epCount,
-                    banner: await this.parseWebtoonBanner(document, mobileDocument),
-                } as WebtoonModel;
-            }catch(err){
-                this.logger.error(`Error while retrieving information for the webtoon "${webtoon.link}":`, err);
-                await new Promise(resolve => setTimeout(resolve, 5000));
-            }
-        }
-    }
-
     private async parseWebtoonBanner(webtoonDom: Document, mobileWebtoonDom: Document): Promise<WebtoonBannerModel>{
         const style = webtoonDom.querySelector("div.detail_bg")?.getAttribute("style");
         const backgroundBanner = style?.split("url(")[1].split(")")[0].replaceAll("'", "");
@@ -202,79 +287,5 @@ export class WebtoonProvider{
     private async parseMobileWebtoonBanner(mobileWebtoonDom: Document): Promise<string | undefined>{
         const bannerUrl: string | undefined = (mobileWebtoonDom.querySelector("#header")?.getAttribute("style")?.split("url(")[1]?.split(")")[0]) || undefined;
         return bannerUrl?.replaceAll("'", "");
-    }
-
-    async getEpisodes(webtoon: CachedWebtoonModel): Promise<EpisodeModel[]>{
-        const baseUrl: string = webtoon.link.replace(`/list?title_no=${webtoon.id}`, "");
-        let url: string;
-        let response: AxiosResponse;
-        let error: Error | undefined;
-        let currentEpisode: number = 1;
-        do{
-            error = undefined;
-            url = baseUrl + `/x/viewer?title_no=${webtoon.id}&episode_no=${currentEpisode}`;
-            try{
-                response = await this.miscService.axiosWithHardTimeout(
-                    signal =>
-                        this.miscService.getAxiosInstance().get(url, {
-                            signal,
-                        }),
-                    20000,
-                );
-            }catch(e: any){
-                this.logger.debug(`Failed to fetch episode ${currentEpisode}, trying episode  ${currentEpisode + 1}`);
-                error = e;
-                currentEpisode++;
-                await new Promise(resolve => setTimeout(resolve, 5000));
-            }
-        }while(error);
-        const document = new JSDOM(response.data).window.document;
-        const epUl = document.querySelector("div.episode_cont ul");
-        const epList = epUl?.querySelectorAll("li");
-        if(!epList) throw new NotFoundException(`No episodes found for webtoon: ${url}`);
-        const episodes: EpisodeModel[] = [];
-        for(const li of epList){
-            const a = li.querySelector("a");
-            if(!a) continue;
-            const link = a.href;
-            const thumbnail = a.querySelector("span.thmb img")?.getAttribute("data-url");
-            const title = a.querySelector("span.subj")?.textContent;
-            if(!title || !link || !thumbnail)
-                throw new NotFoundException(`Missing data for episode: ${url}`);
-            episodes.push({
-                link,
-                thumbnail,
-                title,
-                number: currentEpisode,
-            } as EpisodeModel);
-            currentEpisode++;
-        }
-        return episodes;
-    }
-
-    async getEpisodeLinks(webtoon: CachedWebtoonModel, episode: EpisodeModel): Promise<string[]>{
-        const baseUrl = webtoon.link.replace(`/list?title_no=${webtoon.id}`, "");
-        const url = baseUrl + `/episode-${episode.number}/viewer?title_no=${webtoon.id}&episode_no=${episode.number}`;
-        const response = await this.miscService.axiosWithHardTimeout(
-            signal =>
-                this.miscService.getAxiosInstance().get(url, {
-                    signal,
-                }),
-            20000,
-        );
-        const htmlContent = response.data;
-        const dom = new JSDOM(htmlContent);
-        const document = dom.window.document;
-        const imagesNode = document.querySelector("div#_imageList");
-        const images = imagesNode?.querySelectorAll("img");
-        if(!images) throw new NotFoundException(`No images found for episode: ${url}`);
-        const links: string[] = [];
-        for(let i = 0; i < images.length; i++){
-            const image = images[i];
-            const link = image.getAttribute("data-url");
-            if(!link) throw new NotFoundException(`No link found for image ${i + 1} in episode: ${url}`);
-            links.push(link);
-        }
-        return links;
     }
 }
