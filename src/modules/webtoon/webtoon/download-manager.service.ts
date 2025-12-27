@@ -70,6 +70,10 @@ export class DownloadManagerService{
             throw new HttpException("Cache not loaded.", HttpStatusCode.TooEarly);
         for(const webtoonLanguageName of await this.webtoonDatabaseService.getWebtoonList()){
             const webtoonLanguage: CachedWebtoonModel[] = this.webtoonParserService.webtoons[webtoonLanguageName.language];
+            if(!webtoonLanguage){
+                this.logger.debug(`Language ${webtoonLanguageName.language} not found in cache. Skipping...`);
+                continue;
+            }
             this.downloadQueue.enqueue(webtoonLanguage.find(w => w.title === webtoonLanguageName.title) as CachedWebtoonModel);
         }
         if(!this.downloadQueue.getCurrentDownload())
@@ -103,7 +107,7 @@ export class DownloadManagerService{
                     try{
                         epImageLinks = await this.webtoonParserService.getEpisodeLinks(this.downloadQueue.getCurrentDownload(), epList[i]);
                         fetched = true;
-                    }catch (_: any){
+                    }catch(_: any){
                         this.logger.warn(`Error fetching episode ${epList[i].number} of ${this.downloadQueue.getCurrentDownload().title}. Retrying...`);
                         await new Promise(resolve => setTimeout(resolve, 3000));
                     }
