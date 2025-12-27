@@ -74,7 +74,12 @@ export class DownloadManagerService{
                 this.logger.debug(`Language ${webtoonLanguageName.language} not found in cache. Skipping...`);
                 continue;
             }
-            this.downloadQueue.enqueue(webtoonLanguage.find(w => w.title === webtoonLanguageName.title) as CachedWebtoonModel);
+            const findWebtoon: CachedWebtoonModel = webtoonLanguage.find(w => w.title === webtoonLanguageName.title);
+            if(!findWebtoon){
+                this.logger.debug(`Webtoon ${webtoonLanguageName.title} not found in cache. Skipping...`);
+                continue;
+            }
+            this.downloadQueue.enqueue(findWebtoon);
         }
         if(!this.downloadQueue.getCurrentDownload())
             this.startDownload().then(() => console.log("Download finished."));
